@@ -19,7 +19,7 @@
 
 (deftest logs-to-cambium-logger-at-level-with-type-context-and-correct-meta
   (doseq [{:keys [slf4j-level-name without-opts]} defs/level-defs]
-    (let [{:keys [fn meta]} without-opts
+    (let [{:keys [log-fn meta]} without-opts
           {:keys [line column]} meta
           logger (cartus-cambium/logger)
           log-output-stream (logback/configure)
@@ -27,7 +27,7 @@
           context {:some "context"}]
       (cartus-cambium/initialise)
 
-      (fn logger type context)
+      (log-fn logger type context)
 
       (is (= [{:level   (string/upper-case slf4j-level-name)
                :some    "context"
@@ -42,7 +42,7 @@
 
 (deftest logs-to-cambium-logger-at-level-using-specified-message-when-provided
   (doseq [{:keys [slf4j-level-name with-opts]} defs/level-defs]
-    (let [{:keys [fn meta]} with-opts
+    (let [{:keys [log-fn meta]} with-opts
           {:keys [line column]} meta
           logger (cartus-cambium/logger)
           log-output-stream (logback/configure)
@@ -51,7 +51,7 @@
           message "Some event just happened."]
       (cartus-cambium/initialise)
 
-      (fn logger type context
+      (log-fn logger type context
         {:message message})
 
       (is (= [{:level   (string/upper-case slf4j-level-name)
@@ -67,14 +67,14 @@
 
 (deftest logs-to-cambium-logger-at-level-using-specified-exception-when-provided
   (doseq [{:keys [slf4j-level-name with-opts]} defs/level-defs]
-    (let [{:keys [fn meta]} with-opts
+    (let [{:keys [log-fn meta]} with-opts
           {:keys [line column]} meta
           logger (cartus-cambium/logger)
           log-output-stream (logback/configure)
           type ::some.event
           context {:some "context"}
           exception (ex-info "Something went wrong..." {:some "data"})]
-      (fn logger type context {:exception exception})
+      (log-fn logger type context {:exception exception})
 
       (is (= [{:level     (string/upper-case slf4j-level-name)
                :some      "context"

@@ -19,7 +19,7 @@
     (SLF4JBridgeHandler/install)))
 
 (deftype CambiumLogger
-  []
+         []
   cartus/Logger
   (log [_ level type context
         {:keys [message exception meta]
