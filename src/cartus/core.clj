@@ -6,6 +6,16 @@
          :or   {meta {}}
          :as   opts}]))
 
+(defrecord GlobalContextLogger [delegate global-context]
+           Logger
+           (log [_ level type context opts]
+             (log delegate level type (merge global-context context) opts)))
+
+(defn with-global-context [logger context]
+  (map->GlobalContextLogger
+    {:delegate       logger
+     :global-context context}))
+
 (defmacro ^:private deflevel
   "This macro is used internally to define namespace-based level loggers."
   [level-symbol]
