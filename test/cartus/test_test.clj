@@ -20,7 +20,7 @@
                :context context
                :meta    (assoc meta
                           :ns (find-ns 'cartus.test-support.definitions))}]
-            (cartus-test/records logger))))))
+            (cartus-test/events logger))))))
 
 (deftest logs-to-test-logger-at-level-using-specified-message-when-provided
   (doseq [{:keys [level-keyword with-opts]} defs/level-defs]
@@ -37,7 +37,7 @@
                :message message
                :meta    (assoc meta
                           :ns (find-ns 'cartus.test-support.definitions))}]
-            (cartus-test/records logger))))))
+            (cartus-test/events logger))))))
 
 (deftest logs-to-test-logger-at-level-using-specified-exception-when-provided
   (doseq [{:keys [level-keyword with-opts]} defs/level-defs]
@@ -54,7 +54,7 @@
                :exception exception
                :meta      (assoc meta
                             :ns (find-ns 'cartus.test-support.definitions))}]
-            (cartus-test/records logger))))))
+            (cartus-test/events logger))))))
 
 (deftest adds-global-context-to-test-logger-with-local-context-priority
   (doseq [{:keys [without-opts]} defs/level-defs]
@@ -72,4 +72,4 @@
       (log-fn amended-logger type local-context)
 
       (is (= {:first 10 :second 20 :third 30}
-            (-> (cartus-test/records test-logger) first :context))))))
+            (-> (cartus-test/events test-logger) first :context))))))

@@ -4,7 +4,8 @@
 [![Clojars Downloads](https://img.shields.io/clojars/dt/io.logicblocks/cartus.svg)](https://clojars.org/io.logicblocks/cartus)
 [![GitHub Contributors](https://img.shields.io/github/contributors-anon/logicblocks/cartus.svg)](https://github.com/logicblocks/cartus/graphs/contributors)
 
-A structured logging abstraction with multiple backends, currently including:
+A structured logging abstraction for logging data rich events with support for 
+multiple backends, currently including:
 * A test implementation for collecting logs in memory and asserting against 
   them.
 * A cambium implementation for logging out via SLF4J and logback.

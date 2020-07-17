@@ -5,7 +5,16 @@
   :license {:name "The MIT License"
             :url  "https://opensource.org/licenses/MIT"}
 
-  :dependencies [[cambium/cambium.core "0.9.3"]]
+  :dependencies [[cambium/cambium.core "0.9.3"]
+                 [cambium/cambium.logback.core "0.4.3"]
+
+                 [org.slf4j/slf4j-api "1.7.30"]
+                 [org.slf4j/jcl-over-slf4j "1.7.30"]
+                 [org.slf4j/jul-to-slf4j "1.7.30"]
+                 [org.slf4j/log4j-over-slf4j "1.7.30"]
+                 [ch.qos.logback/logback-classic "1.2.3"
+                  :exclusions [org.slf4j/slf4j-api
+                               org.slf4j/slf4j-log4j12]]]
 
   :plugins [[lein-cloverage "1.1.2"]
             [lein-shell "0.5.0"]
@@ -26,16 +35,7 @@
                    [nrepl "0.7.0"]
 
                    [cambium/cambium.codec-cheshire "0.9.3"]
-                   [cambium/cambium.logback.core "0.4.3"]
                    [cambium/cambium.logback.json "0.4.3"]
-
-                   [org.slf4j/slf4j-api "1.7.30"]
-                   [org.slf4j/jcl-over-slf4j "1.7.30"]
-                   [org.slf4j/jul-to-slf4j "1.7.30"]
-                   [org.slf4j/log4j-over-slf4j "1.7.30"]
-                   [ch.qos.logback/logback-classic "1.2.3"
-                    :exclusions [org.slf4j/slf4j-api
-                                 org.slf4j/slf4j-log4j12]]
 
                    [eftest "0.5.9"]]}
    :dev
@@ -83,7 +83,8 @@
   :bikeshed {:name-collisions false}
 
   :cljfmt {:indents {#".*"     [[:inner 0]]
-                     defrecord [[:block 1] [:inner 1]]}}
+                     defrecord [[:block 1] [:inner 1]]
+                     deftype   [[:block 1] [:inner 1]]}}
 
   :eastwood {:config-files ["config/linter.clj"]}
 
