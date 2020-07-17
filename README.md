@@ -17,12 +17,12 @@ Heavily inspired by [JUXT's blog on logging](https://juxt.pro/blog/logging).
 Add the following to your `project.clj` file:
 
 ```clj
-[io.logicblocks/cartus "0.1.0-RC0"]
+[io.logicblocks/cartus "0.1.1"]
 ```
 
 ## Documentation
 
-TODO
+* [API Docs](http://logicblocks.github.io/cartus)
 
 ## Usage
 
