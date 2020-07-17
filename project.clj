@@ -80,7 +80,8 @@
    :doc-paths   ["docs"]
    :source-uri  "https://github.com/logicblocks/cartus/blob/{version}/{filepath}#L{line}"}
 
-  :bikeshed {:name-collisions false}
+  :bikeshed {:name-collisions false
+             :long-lines      false}
 
   :cljfmt {:indents {#".*"     [[:inner 0]]
                      defrecord [[:block 1] [:inner 1]]

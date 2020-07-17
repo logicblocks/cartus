@@ -7,6 +7,7 @@
    [clojure.tools.logging.impl :as ctl-impl]
 
    [cambium.core :as cambium]
+   [cambium.codec]
    [cambium.logback.json.flat-layout :as cambium-flat-layout]
 
    [cartus.core :as cartus])
