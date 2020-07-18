@@ -10,9 +10,9 @@ multiple backends, currently including:
   them.
 * A cambium implementation for logging out via SLF4J and logback.
 
-Heavily inspired by [JUXT's blog on logging](https://juxt.pro/blog/logging).
+Heavily inspired by [JUXT's blog post on logging](https://juxt.pro/blog/logging).
 
-## Install
+## Installation
 
 Add the following to your `project.clj` file:
 
