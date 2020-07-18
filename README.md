@@ -17,7 +17,7 @@ Heavily inspired by [JUXT's blog post on logging](https://juxt.pro/blog/logging)
 Add the following to your `project.clj` file:
 
 ```clj
-[io.logicblocks/cartus "0.1.1"]
+[io.logicblocks/cartus "0.1.2"]
 ```
 
 ## Documentation
