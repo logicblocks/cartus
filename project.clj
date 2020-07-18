@@ -1,4 +1,4 @@
-(defproject io.logicblocks/cartus "0.1.4"
+(defproject io.logicblocks/cartus "0.1.5-RC1"
   :description "A structured logging abstraction with multiple backends."
   :url "https://github.com/logicblocks/cartus"
 
