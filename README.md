@@ -19,7 +19,7 @@ Heavily inspired by [JUXT's blog post on logging](https://juxt.pro/blog/logging)
 Add the following to your `project.clj` file:
 
 ```clojure
-[io.logicblocks/cartus "0.1.4"]
+[io.logicblocks/cartus "0.1.5"]
 ```
 
 ## Documentation
