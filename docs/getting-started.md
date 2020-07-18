@@ -28,7 +28,7 @@ Add the following to your `project.clj` file:
 ### The `cartus.test/logger` backend
 
 The [[cartus.test/logger]] backend captures all logged events in memory in an
-atom, allowing tests to assert that log events took place.
+atom, allowing your tests to assert that log events took place.
 
 To create a `cartus.test/logger`:
 
@@ -144,10 +144,10 @@ Log events:
   the call to the logger such as the line, column and
   namespace of the call.
 
-The convenience macros [[cartus.core/trace]], [[cartus.core/debug]], 
-[[cartus.core/info]], [[cartus.core/warn]], [[cartus.core/error]] and
-[[cartus.core/fatal]] are used to log events at each respective level, 
-capturing metadata for the call site automatically: 
+To log events at each respective level, you can use the convenience macros 
+[[cartus.core/trace]], [[cartus.core/debug]], [[cartus.core/info]], 
+[[cartus.core/warn]], [[cartus.core/error]] and [[cartus.core/fatal]], 
+which also capture metadata for the call site automatically: 
 
 ```clojure
 (ns example.logging
@@ -259,4 +259,118 @@ capturing metadata for the call site automatically:
 ; \"
 ; }
 ; "
+``` 
+
+Alternatively, you can use the `cartus.core/log` function from 
+[[cartus.core/Logger]] to log directly, giving full control over all aspects of 
+the log event:
+
+```clojure
+(ns example.logging
+  (:require
+   [cartus.core :as log]
+   [cartus.cambium]))
+
+(cartus.cambium/initialise)
+
+(def logger (cartus.cambium/logger))
+
+(log/log logger :info ::system.started
+  {:flags {:in-memory-database false
+             :live-services false}}
+  {:meta {:line 10 :column 20 :ns (find-ns 'example.other)}})
+; =>
+; "{
+;   \"timestamp\" : \"2020-07-18T17:35:50.896Z\",
+;   \"level\" : \"INFO\",
+;   \"thread\" : \"nREPL-session-ea7676d2-b76c-44c4-bc2b-d1c2f8515c0b\",
+;   \"ns\" : \"example.other\",
+;   \"line\" : 10,
+;   \"column\" : 20,
+;   \"flags\" : {
+;     \"in-memory-database\" : false,
+;     \"live-services\" : false
+;   },
+;   \"type\" : \"example.logging/system.started\",
+;   \"logger\" : \"example.other\",
+;   \"message\" : \"example.logging/system.started\",
+;   \"context\" : \"default\"
+; }
+; "
+```
+
+Note that in the case you use `cartus.core/log` directly, no metadata is 
+captured so metadata must be provided explicitly.
+
+## Setting global context
+
+Since `cartus.core` functions accept the logger as an explicit dependency, you
+can easily add global context to a logger instance, using 
+[[cartus.core/with-global-context]]. This function returns a new logger which
+will merge the provided global context with the local context provided at log 
+time, with the local context taking preference:
+
+```clojure
+(ns example.logging
+  (:require
+   [cartus.core :as log]
+   [cartus.cambium]))
+
+(cartus.cambium/initialise)
+
+(def standard-logger (cartus.cambium/logger))
+(def contextual-logger (cartus.core/with-global-context standard-logger
+                        {:request-id 5 :user-id 15}))
+
+(log/info contextual-logger ::service.requesting
+  {:request-id 10 :endpoint-name "check"})
+; =>
+; "{
+;   \"timestamp\" : \"2020-07-18T17:51:35.862Z\",
+;   \"level\" : \"INFO\",
+;   \"thread\" : \"nREPL-session-ea7676d2-b76c-44c4-bc2b-d1c2f8515c0b\",
+;   \"endpoint-name\" : \"check\",
+;   \"ns\" : \"example.logging\",
+;   \"line\" : 12,
+;   \"user-id\" : 15,
+;   \"column\" : 1,
+;   \"request-id\" : 10,
+;   \"type\" : \"example.logging/service.requesting\",
+;   \"logger\" : \"example.logging\",
+;   \"message\" : \"example.logging/service.requesting\",
+;   \"context\" : \"default\"
+; }
+; "
+```
+
+## Testing for log events
+
+With the help of the [[cartus.test/logger]] and [[cartus.test/events]], you can 
+assert that log events occurred from your tests:
+
+```clojure
+(ns example.subject
+  (:require
+   [cartus.core :as log]))
+
+(defn +-with-logging [logger & vals]
+  (log/info logger ::summing.values {:values vals})
+  (apply + vals))
+
+(ns example.subject-test
+  (:require
+   [cartus.test :as log-test]
+   
+   [example.subject :as subject]))
+
+(deftest logs-while-summing
+  (let [logger (cartus.test/logger)]
+    (is (= 6 (subject/+-with-logging logger 1 2 3)))
+    (is (= [{:level   :info
+             :type    :example.subject/summing.values
+             :context {:values [1 2 3]}
+             :meta    {:ns (find-ns 'example.subject)
+                       :line 6
+                       :column 3}}]
+      (log-test/events logger)))))
 ``` 
