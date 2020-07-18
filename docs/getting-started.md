@@ -51,7 +51,7 @@ To use the `cambium` logger, you must first choose a codec and backend for
 To use plain text logs, add the following to your `project.clj` file:
 
 ```clojure
-[cambium/cambium.codec-simple "0.1.2"]
+[cambium/cambium.codec-simple "0.9.3"]
 ```
 
 and add logback configuration (typically at `resources/logback.xml`) containing
@@ -75,8 +75,8 @@ something like the following:
 To use JSON logs, add the following to your `project.clj` file:
 
 ```clojure
-[cambium/cambium.codec-cheshire "0.1.2"]
-[cambium/cambium.logback.json   "0.1.2"]
+[cambium/cambium.codec-cheshire "0.9.3"]
+[cambium/cambium.logback.json   "0.4.3"]
 ```
 
 and add logback configuration (again, typically at `resources/logback.xml`)
