@@ -4,7 +4,6 @@
 
    [cartus.test-support.definitions :as defs]
 
-   [cartus.core :as cartus]
    [cartus.test :as cartus-test]))
 
 (deftest logs-to-test-logger-at-level-with-type-context-and-correct-meta
@@ -55,21 +54,3 @@
                :meta      (assoc meta
                             :ns (find-ns 'cartus.test-support.definitions))}]
             (cartus-test/events logger))))))
-
-(deftest adds-global-context-to-test-logger-with-local-context-priority
-  (doseq [{:keys [without-opts]} defs/level-defs]
-    (let [{:keys [log-fn]} without-opts
-          local-context {:first 10
-                         :second 20}
-          global-context {:first 1
-                          :third 30}
-
-          test-logger (cartus-test/logger)
-          amended-logger (cartus/with-global-context
-                           test-logger global-context)
-
-          type ::some.event]
-      (log-fn amended-logger type local-context)
-
-      (is (= {:first 10 :second 20 :third 30}
-            (-> (cartus-test/events test-logger) first :context))))))

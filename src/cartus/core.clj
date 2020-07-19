@@ -35,11 +35,31 @@
          :as   opts}]
     "Log the provided event."))
 
-(defrecord GlobalContextLogger
-  [delegate global-context]
+(defrecord TransformerLogger
+  [xform delegate]
   Logger
   (log [_ level type context opts]
-    (log delegate level type (merge global-context context) opts)))
+    ((xform
+       (fn [logger event]
+         (log logger
+           (:level event)
+           (:type event)
+           (:context event)
+           (:opts event))))
+     delegate
+     {:level level :type type :context context :opts opts})))
+
+(defn with-transformation
+  "Returns a new logger which applies the provided transducer to any logged
+  event before passing it on to the underlying logger.
+
+  The transducer will receive the logged event as a map with keys `:level`,
+  `:type`, `:context` and `:opts` set to the corresponding arguments to the
+  log function and should return a map of the same shape."
+  [logger xform]
+  (map->TransformerLogger
+    {:delegate logger
+     :xform    xform}))
 
 (defn with-global-context
   "Returns a new logger which includes the provided global context map in any
@@ -48,9 +68,47 @@
   Entries in the local context map provided at log time takes precedence over
   entries in the global context map."
   [logger global-context]
-  (map->GlobalContextLogger
-    {:delegate       logger
-     :global-context global-context}))
+  (with-transformation
+    logger
+    (map
+      (fn [event]
+        (assoc event :context (merge global-context (:context event)))))))
+
+(defn with-levels-retained
+  ""
+  [logger levels]
+  (with-transformation
+    logger
+    (filter
+      (fn [event]
+        ((set levels) (:level event))))))
+
+(defn with-levels-ignored
+  ""
+  [logger levels]
+  (with-transformation
+    logger
+    (remove
+      (fn [event]
+        ((set levels) (:level event))))))
+
+(defn with-types-retained
+  ""
+  [logger types]
+  (with-transformation
+    logger
+    (filter
+      (fn [event]
+        ((set types) (:type event))))))
+
+(defn with-types-ignored
+  ""
+  [logger types]
+  (with-transformation
+    logger
+    (remove
+      (fn [event]
+        ((set types) (:type event))))))
 
 (defmacro ^:private deflevel
   "Used internally to define level specific logging macros that pass through

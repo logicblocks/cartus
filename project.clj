@@ -37,7 +37,8 @@
                    [cambium/cambium.codec-cheshire "0.9.3"]
                    [cambium/cambium.logback.json "0.4.3"]
 
-                   [eftest "0.5.9"]]}
+                   [eftest "0.5.9"]
+                   [tortue/spy "2.0.0"]]}
    :dev
    [:shared {:source-paths ["dev"]
              :eftest       {:multithread? false}}]
