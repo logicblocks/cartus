@@ -79,6 +79,10 @@
     {:source-paths ["dev"]
      :eftest       {:multithread? false}}]
 
+   :test
+   [:shared
+    {:eftest {:multithread? false}}]
+
    :codox
    [:shared
     {:dependencies [[io.logicblocks/cartus.core :version]
@@ -96,10 +100,6 @@
                      :exclusions [org.slf4j/slf4j-api
                                   org.slf4j/slf4j-log4j12]]]
      :source-paths ["core/src" "cambium/src" "test/src"]}]
-
-   :test
-   [:shared
-    {:eftest {:multithread? false}}]
 
    :prerelease
    {:release-tasks

@@ -4,7 +4,10 @@ require 'rake_github'
 require 'rake_circle_ci'
 require 'rake_leiningen'
 
-task :default => [:'library:check', :'library:test:unit']
+task :default => [
+    :'library:check',
+    :'library:test:unit'
+]
 
 RakeLeiningen.define_installation_tasks(
     version: '2.9.1')
@@ -62,20 +65,31 @@ namespace :pipeline do
 end
 
 namespace :library do
-  RakeLeiningen.define_check_tasks(fix: true)
+  task :initialise => [:'leiningen:ensure'] do
+    sh('lein modules install')
+  end
+
+  RakeLeiningen.define_check_tasks(
+      fix: true,
+      prerequisites: [:'library:initialise'])
 
   namespace :test do
     RakeLeiningen.define_test_task(
-        name: :unit, type: 'unit', profile: 'test')
+        name: :unit,
+        type: 'unit',
+        profile: 'test',
+        prerequisites: [:'library:initialise'])
   end
 
   namespace :publish do
     RakeLeiningen.define_release_task(
         name: :prerelease,
-        profile: 'prerelease')
+        profile: 'prerelease',
+        prerequisites: [:'library:initialise'])
 
     RakeLeiningen.define_release_task(
         name: :release,
-        profile: 'release')
+        profile: 'release',
+        prerequisites: [:'library:initialise'])
   end
 end
