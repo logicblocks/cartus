@@ -5,6 +5,7 @@ require 'rake_circle_ci'
 require 'rake_leiningen'
 
 task :default => [
+    :'library:initialise',
     :'library:check',
     :'library:test:unit'
 ]
@@ -69,27 +70,22 @@ namespace :library do
     sh('lein modules install')
   end
 
-  RakeLeiningen.define_check_tasks(
-      fix: true,
-      prerequisites: [:'library:initialise'])
+  RakeLeiningen.define_check_tasks(fix: true)
 
   namespace :test do
     RakeLeiningen.define_test_task(
         name: :unit,
         type: 'unit',
-        profile: 'test',
-        prerequisites: [:'library:initialise'])
+        profile: 'test')
   end
 
   namespace :publish do
     RakeLeiningen.define_release_task(
         name: :prerelease,
-        profile: 'prerelease',
-        prerequisites: [:'library:initialise'])
+        profile: 'prerelease')
 
     RakeLeiningen.define_release_task(
         name: :release,
-        profile: 'release',
-        prerequisites: [:'library:initialise'])
+        profile: 'release')
   end
 end
