@@ -1,23 +1,10 @@
 (defproject io.logicblocks/cartus "0.1.6-RC1"
-  :description "A structured logging abstraction with multiple backends."
-  :url "https://github.com/logicblocks/cartus"
+  :description "Parent for all cartus modules."
 
-  :license {:name "The MIT License"
-            :url  "https://opensource.org/licenses/MIT"}
-
-  :dependencies [[cambium/cambium.core "0.9.3"]
-                 [cambium/cambium.logback.core "0.4.3"]
-
-                 [org.slf4j/slf4j-api "1.7.30"]
-                 [org.slf4j/jcl-over-slf4j "1.7.30"]
-                 [org.slf4j/jul-to-slf4j "1.7.30"]
-                 [org.slf4j/log4j-over-slf4j "1.7.30"]
-                 [ch.qos.logback/logback-classic "1.2.3"
-                  :exclusions [org.slf4j/slf4j-api
-                               org.slf4j/slf4j-log4j12]]]
-
-  :plugins [[lein-cloverage "1.1.2"]
+  :plugins [[lein-modules "0.3.11"]
+            [lein-cloverage "1.1.2"]
             [lein-shell "0.5.0"]
+            [lein-cprint "1.3.3"]
             [lein-ancient "0.6.15"]
             [lein-changelog "0.3.2"]
             [lein-eftest "0.5.9"]
@@ -27,35 +14,109 @@
             [lein-bikeshed "0.5.2"]
             [jonase/eastwood "0.3.11"]]
 
+  :modules
+  {:subprocess
+   nil
+
+   :inherited
+   {:url
+    "https://github.com/logicblocks/cartus"
+
+    :license
+    {:name "The MIT License"
+     :url  "https://opensource.org/licenses/MIT"}
+
+    :deploy-repositories
+    {"releases"  {:url "https://repo.clojars.org" :creds :gpg}
+     "snapshots" {:url "https://repo.clojars.org" :creds :gpg}}
+
+    :cloverage
+    {:ns-exclude-regex [#"^user"]}
+
+    :bikeshed
+    {:name-collisions false
+     :long-lines      false}
+
+    :cljfmt
+    {:indents {#".*"     [[:inner 0]]
+               defrecord [[:block 1] [:inner 1]]
+               deftype   [[:block 1] [:inner 1]]}}
+
+    :eastwood
+    {:config-files
+     [~(str (System/getProperty "user.dir") "/config/linter.clj")]}}
+
+   :versions
+   {org.clojure/clojure            "1.10.1"
+    org.clojure/tools.trace        "0.7.10"
+
+    cambium/cambium.core           "0.9.3"
+    cambium/cambium.codec-cheshire "0.9.3"
+    cambium/cambium.logback.core   "0.4.3"
+    cambium/cambium.logback.json   "0.4.3"
+
+    org.slf4j                      "1.7.30"
+    ch.qos.logback                 "1.2.3"
+
+    nrepl                          "0.7.0"
+
+    eftest                         "0.5.9"
+    tortue/spy                     "2.0.0"
+
+    io.logicblocks/cartus.core     :version}}
+
   :profiles
   {:shared
-   {:dependencies [[org.clojure/clojure "1.10.1"]
-                   [org.clojure/tools.trace "0.7.10"]
+   ^{:pom-scope :test}
+   {:dependencies [[org.clojure/clojure "_"]
+                   [org.clojure/tools.trace "_"]
+                   [nrepl "_"]
+                   [eftest "_"]
+                   [tortue/spy "_"]]}
 
-                   [nrepl "0.7.0"]
-
-                   [cambium/cambium.codec-cheshire "0.9.3"]
-                   [cambium/cambium.logback.json "0.4.3"]
-
-                   [eftest "0.5.9"]
-                   [tortue/spy "2.0.0"]]}
    :dev
-   [:shared {:source-paths ["dev"]
-             :eftest       {:multithread? false}}]
+   [:shared
+    {:source-paths ["dev"]
+     :eftest       {:multithread? false}}]
+
+   :codox
+   [:shared
+    {:dependencies [[io.logicblocks/cartus.core :version]
+
+                    [cambium/cambium.core "_"]
+                    [cambium/cambium.codec-cheshire "_"]
+                    [cambium/cambium.logback.core "_"]
+                    [cambium/cambium.logback.json "_"]
+
+                    [org.slf4j/slf4j-api "_"]
+                    [org.slf4j/jcl-over-slf4j "_"]
+                    [org.slf4j/jul-to-slf4j "_"]
+                    [org.slf4j/log4j-over-slf4j "_"]
+                    [ch.qos.logback/logback-classic "_"
+                     :exclusions [org.slf4j/slf4j-api
+                                  org.slf4j/slf4j-log4j12]]]
+     :source-paths ["core/src" "cambium/src" "test/src"]}]
+
    :test
-   [:shared {:eftest {:multithread? false}}]
+   [:shared
+    {:eftest {:multithread? false}}]
+
    :prerelease
    {:release-tasks
     [["shell" "git" "diff" "--exit-code"]
      ["change" "version" "leiningen.release/bump-version" "rc"]
+     ["modules" "change" "version" "leiningen.release/bump-version" "rc"]
      ["change" "version" "leiningen.release/bump-version" "release"]
+     ["modules" "change" "version" "leiningen.release/bump-version" "release"]
      ["vcs" "commit" "Pre-release version %s [skip ci]"]
      ["vcs" "tag"]
-     ["deploy"]]}
+     ["modules" "deploy"]]}
+
    :release
    {:release-tasks
     [["shell" "git" "diff" "--exit-code"]
      ["change" "version" "leiningen.release/bump-version" "release"]
+     ["modules" "change" "version" "leiningen.release/bump-version" "release"]
      ["changelog" "release"]
      ["shell" "sed" "-E" "-i.bak" "s/cartus \"[0-9]+\\.[0-9]+\\.[0-9]+\"/cartus \"${:version}\"/g" "README.md"]
      ["shell" "rm" "-f" "README.md.bak"]
@@ -65,16 +126,18 @@
      ["shell" "git" "add" "."]
      ["vcs" "commit" "Release version %s [skip ci]"]
      ["vcs" "tag"]
-     ["deploy"]
+     ["modules" "deploy"]
      ["change" "version" "leiningen.release/bump-version" "patch"]
+     ["modules" "change" "version" "leiningen.release/bump-version" "patch"]
      ["change" "version" "leiningen.release/bump-version" "rc"]
+     ["modules" "change" "version" "leiningen.release/bump-version" "rc"]
      ["change" "version" "leiningen.release/bump-version" "release"]
+     ["modules" "change" "version" "leiningen.release/bump-version" "release"]
      ["vcs" "commit" "Pre-release version %s [skip ci]"]
      ["vcs" "tag"]
      ["vcs" "push"]]}}
 
-  :cloverage
-  {:ns-exclude-regex [#"^user"]}
+  :source-paths []
 
   :codox
   {:namespaces  [#"^cartus\."]
@@ -83,15 +146,9 @@
    :doc-paths   ["docs"]
    :source-uri  "https://github.com/logicblocks/cartus/blob/{version}/{filepath}#L{line}"}
 
-  :bikeshed {:name-collisions false
-             :long-lines      false}
-
-  :cljfmt {:indents {#".*"     [[:inner 0]]
-                     defrecord [[:block 1] [:inner 1]]
-                     deftype   [[:block 1] [:inner 1]]}}
-
-  :eastwood {:config-files ["config/linter.clj"]}
-
-  :deploy-repositories
-  {"releases"  {:url "https://repo.clojars.org" :creds :gpg}
-   "snapshots" {:url "https://repo.clojars.org" :creds :gpg}})
+  :aliases {"eastwood" ["modules" "eastwood"]
+            "cljfmt"   ["modules" "cljfmt"]
+            "kibit"    ["modules" "kibit"]
+            "check"    ["modules" "check"]
+            "bikeshed" ["modules" "bikeshed"]
+            "eftest"   ["modules" "eftest"]})
