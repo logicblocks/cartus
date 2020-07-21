@@ -2,6 +2,7 @@ require 'yaml'
 require 'rake_ssh'
 require 'rake_github'
 require 'rake_circle_ci'
+require 'ruby_leiningen'
 require 'rake_leiningen'
 
 task :default => [
@@ -9,6 +10,13 @@ task :default => [
     :'library:check',
     :'library:test:unit'
 ]
+
+RubyLeiningen::Commands.define_custom_command("modules")  do |config, opts|
+  config.on_command_builder do |command|
+    command = command.with_subcommand(opts[:command].to_s)
+    command
+  end
+end
 
 RakeLeiningen.define_installation_tasks(
     version: '2.9.1')
@@ -67,7 +75,7 @@ end
 
 namespace :library do
   task :initialise => [:'leiningen:ensure'] do
-    sh('lein modules install')
+    RubyLeiningen.modules(command: "install")
   end
 
   RakeLeiningen.define_check_tasks(fix: true)
