@@ -20,7 +20,7 @@ out for different contexts.
 Add the following to your `project.clj` file:
 
 ```clojure
-[io.logicblocks/cartus "0.1.5"]
+[io.logicblocks/cartus "0.1.6"]
 ```
 
 ## Configuring a backend
