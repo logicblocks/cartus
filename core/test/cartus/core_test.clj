@@ -20,20 +20,20 @@
 (defn spying-logger []
   (map->SpyingLogger {:spy (spy/stub nil)}))
 
-(deftest adds-global-context-to-test-logger-with-local-context-priority
+(deftest adds-context-to-test-logger-with-log-time-context-priority
   (doseq [{:keys [without-opts]} defs/level-defs]
     (let [{:keys [log-fn]} without-opts
-          local-context {:first  10
-                         :second 20}
-          global-context {:first 1
+          call-context {:first  10
+                        :second 20}
+          logger-context {:first 1
                           :third 30}
 
           spying-logger (spying-logger)
-          amended-logger (cartus/with-global-context
-                           spying-logger global-context)
+          amended-logger (cartus/with-context
+                           spying-logger logger-context)
 
           type ::some.event]
-      (log-fn amended-logger type local-context)
+      (log-fn amended-logger type call-context)
 
       (is (= {:first 10 :second 20 :third 30}
             (-> (spy/calls (:spy spying-logger)) ffirst :context))))))

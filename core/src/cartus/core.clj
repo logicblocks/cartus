@@ -61,21 +61,23 @@
     {:delegate logger
      :xform    xform}))
 
-(defn with-global-context
-  "Returns a new logger which includes the provided global context map in any
+(defn with-context
+  "Returns a new logger which merges the provided context map into that of any
   subsequent log call.
 
-  Entries in the local context map provided at log time takes precedence over
-  entries in the global context map."
-  [logger global-context]
+  Entries in the context map provided at log time takes precedence over
+  entries in the context map passed to this function. The applied merge is
+  shallow."
+  [logger context]
   (with-transformation
     logger
     (map
       (fn [event]
-        (assoc event :context (merge global-context (:context event)))))))
+        (assoc event :context (merge context (:context event)))))))
 
 (defn with-levels-retained
-  ""
+  "Returns a new logger which retains log events having one of the provided
+  levels."
   [logger levels]
   (with-transformation
     logger
@@ -84,7 +86,8 @@
         ((set levels) (:level event))))))
 
 (defn with-levels-ignored
-  ""
+  "Returns a new logger which ignores log events having any of the provided
+  levels."
   [logger levels]
   (with-transformation
     logger
@@ -93,7 +96,8 @@
         ((set levels) (:level event))))))
 
 (defn with-types-retained
-  ""
+  "Returns a new logger which retains log events having one of the provided
+  types."
   [logger types]
   (with-transformation
     logger
@@ -102,7 +106,8 @@
         ((set types) (:type event))))))
 
 (defn with-types-ignored
-  ""
+  "Returns a new logger which ignores log events having any of the provided
+  types."
   [logger types]
   (with-transformation
     logger
