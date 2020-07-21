@@ -2,17 +2,8 @@
   :description "Parent for all cartus modules."
 
   :plugins [[lein-modules "0.3.11"]
-            [lein-cloverage "1.1.2"]
-            [lein-shell "0.5.0"]
-            [lein-cprint "1.3.3"]
-            [lein-ancient "0.6.15"]
             [lein-changelog "0.3.2"]
-            [lein-eftest "0.5.9"]
-            [lein-codox "0.10.7"]
-            [lein-cljfmt "0.6.7"]
-            [lein-kibit "0.1.8"]
-            [lein-bikeshed "0.5.2"]
-            [jonase/eastwood "0.3.11"]]
+            [lein-codox "0.10.7"]]
 
   :modules
   {:subprocess
@@ -29,6 +20,16 @@
     :deploy-repositories
     {"releases"  {:url "https://repo.clojars.org" :creds :gpg}
      "snapshots" {:url "https://repo.clojars.org" :creds :gpg}}
+
+    :plugins [[lein-cloverage "1.1.2"]
+              [lein-shell "0.5.0"]
+              [lein-cprint "1.3.3"]
+              [lein-ancient "0.6.15"]
+              [lein-eftest "0.5.9"]
+              [lein-cljfmt "0.6.7"]
+              [lein-kibit "0.1.8"]
+              [lein-bikeshed "0.5.2"]
+              [jonase/eastwood "0.3.11"]]
 
     :cloverage
     {:ns-exclude-regex [#"^user"]}
