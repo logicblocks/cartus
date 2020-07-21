@@ -117,6 +117,7 @@
     [["shell" "git" "diff" "--exit-code"]
      ["change" "version" "leiningen.release/bump-version" "release"]
      ["modules" "change" "version" "leiningen.release/bump-version" "release"]
+     ["modules" "install"]
      ["changelog" "release"]
      ["shell" "sed" "-E" "-i.bak" "s/cartus \"[0-9]+\\.[0-9]+\\.[0-9]+\"/cartus \"${:version}\"/g" "README.md"]
      ["shell" "rm" "-f" "README.md.bak"]
