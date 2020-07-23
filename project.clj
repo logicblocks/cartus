@@ -11,15 +11,15 @@
 
    :inherited
    {:url
-    "https://github.com/logicblocks/cartus"
+             "https://github.com/logicblocks/cartus"
 
     :license
-    {:name "The MIT License"
-     :url  "https://opensource.org/licenses/MIT"}
+             {:name "The MIT License"
+              :url  "https://opensource.org/licenses/MIT"}
 
     :deploy-repositories
-    {"releases"  {:url "https://repo.clojars.org" :creds :gpg}
-     "snapshots" {:url "https://repo.clojars.org" :creds :gpg}}
+             {"releases"  {:url "https://repo.clojars.org" :creds :gpg}
+              "snapshots" {:url "https://repo.clojars.org" :creds :gpg}}
 
     :plugins [[lein-cloverage "1.1.2"]
               [lein-shell "0.5.0"]
@@ -32,20 +32,20 @@
               [jonase/eastwood "0.3.11"]]
 
     :cloverage
-    {:ns-exclude-regex [#"^user"]}
+             {:ns-exclude-regex [#"^user"]}
 
     :bikeshed
-    {:name-collisions false
-     :long-lines      false}
+             {:name-collisions false
+              :long-lines      false}
 
     :cljfmt
-    {:indents {#".*"     [[:inner 0]]
-               defrecord [[:block 1] [:inner 1]]
-               deftype   [[:block 1] [:inner 1]]}}
+             {:indents {#".*"     [[:inner 0]]
+                        defrecord [[:block 1] [:inner 1]]
+                        deftype   [[:block 1] [:inner 1]]}}
 
     :eastwood
-    {:config-files
-     [~(str (System/getProperty "user.dir") "/config/linter.clj")]}}
+             {:config-files
+              [~(str (System/getProperty "user.dir") "/config/linter.clj")]}}
 
    :versions
    {org.clojure/clojure            "1.10.1"
@@ -120,9 +120,9 @@
      ["modules" "change" "version" "leiningen.release/bump-version" "release"]
      ["modules" "install"]
      ["changelog" "release"]
-     ["shell" "sed" "-E" "-i.bak" "s/cartus\\.(.+) \"[0-9]+\\.[0-9]+\\.[0-9]+\"/cartus.\\1 \"${:version}\"/g" "README.md"]
+     ["shell" "sed" "-E" "-i.bak" "s/cartus\\.(.+) \"[0-9]+\\.[0-9]+\\.[0-9]+\"/cartus.\\\\1 \"${:version}\"/g" "README.md"]
      ["shell" "rm" "-f" "README.md.bak"]
-     ["shell" "sed" "-E" "-i.bak" "s/cartus\\.(.+) \"[0-9]+\\.[0-9]+\\.[0-9]+\"/cartus.\\1 \"${:version}\"/g" "docs/getting-started.md"]
+     ["shell" "sed" "-E" "-i.bak" "s/cartus\\.(.+) \"[0-9]+\\.[0-9]+\\.[0-9]+\"/cartus.\\\\1 \"${:version}\"/g" "docs/getting-started.md"]
      ["shell" "rm" "-f" "docs/getting-started.md.bak"]
      ["codox"]
      ["shell" "git" "add" "."]
@@ -153,4 +153,5 @@
             "kibit"    ["modules" "kibit"]
             "check"    ["modules" "check"]
             "bikeshed" ["modules" "bikeshed"]
-            "eftest"   ["modules" "eftest"]})
+            "eftest"   ["modules" "eftest"]
+            "temp"     ["shell" "sed" "-E" "-i.bak" "s/cartus\\.(.+) \"[0-9]+\\.[0-9]+\\.[0-9]+\"/cartus.\\\\1 \"${:version}\"/g" "README.md"]})
