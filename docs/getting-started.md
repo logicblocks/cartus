@@ -27,7 +27,7 @@ number of benefits:
 Add the following to your `project.clj` file:
 
 ```clojure
-[io.logicblocks/cartus.core "0.1.7"]
+[io.logicblocks/cartus.1 "0.1.8"]
 ```
 
 ## Configuring a backend
@@ -41,7 +41,7 @@ To install the `cartus.test/logger` backend, add the following to your
 `project.clj` file:
 
 ```clojure
-[io.logicblocks/cartus.test "0.1.7"]
+[io.logicblocks/cartus.1 "0.1.8"]
 ```
 
 To create a `cartus.test/logger`:
@@ -63,7 +63,7 @@ To install the `cartus.cambium/logger` backend, add the following to your
 `project.clj` file:
 
 ```clojure
-[io.logicblocks/cartus.cambium "0.1.7"]
+[io.logicblocks/cartus.1 "0.1.8"]
 ```
 
 Additionally, you must choose a codec and backend for `cambium`, which has 

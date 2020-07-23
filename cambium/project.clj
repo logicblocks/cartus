@@ -1,4 +1,4 @@
-(defproject io.logicblocks/cartus.cambium "0.1.8-RC2"
+(defproject io.logicblocks/cartus.cambium "0.1.8"
   :description "A cambium backend for cartus."
 
   :plugins  [[lein-modules "0.3.11"]]
