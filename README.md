@@ -1,7 +1,7 @@
 # cartus
 
-[![Clojars Project](https://img.shields.io/clojars/v/io.logicblocks/cartus.svg)](https://clojars.org/io.logicblocks/cartus)
-[![Clojars Downloads](https://img.shields.io/clojars/dt/io.logicblocks/cartus.svg)](https://clojars.org/io.logicblocks/cartus)
+[![Clojars Project](https://img.shields.io/clojars/v/io.logicblocks/cartus.core.svg)](https://clojars.org/io.logicblocks/cartus.core)
+[![Clojars Downloads](https://img.shields.io/clojars/dt/io.logicblocks/cartus.core.svg)](https://clojars.org/io.logicblocks/cartus.core)
 [![GitHub Contributors](https://img.shields.io/github/contributors-anon/logicblocks/cartus.svg)](https://github.com/logicblocks/cartus/graphs/contributors)
 
 A structured logging abstraction for logging data rich events with support for 
