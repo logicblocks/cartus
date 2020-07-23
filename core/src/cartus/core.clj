@@ -75,25 +75,53 @@
       (fn [event]
         (assoc event :context (merge context (:context event)))))))
 
+(def ^:private all-levels
+  [:trace :debug :info :warn :error :fatal])
+
+(defmulti ^:private filtered-levels
+  (fn [_ operator _] operator))
+(defmethod ^:private filtered-levels >= [levels _ level]
+  (drop-while #(not= % level) levels))
+(defmethod ^:private filtered-levels > [levels _ level]
+  (drop 1 (drop-while #(not= % level) levels)))
+(defmethod ^:private filtered-levels = [_ _ level]
+  [level])
+(defmethod ^:private filtered-levels < [levels _ level]
+  (take-while #(not= % level) levels))
+(defmethod ^:private filtered-levels <= [levels _ level]
+  (conj (take-while #(not= % level) levels) level))
+
 (defn with-levels-retained
-  "Returns a new logger which retains log events having one of the provided
-  levels."
-  [logger levels]
-  (with-transformation
-    logger
-    (filter
-      (fn [event]
-        ((set levels) (:level event))))))
+  "Returns a new logger which retains log events matching the provided criteria.
+
+  The arity-2 version expects a logger and a seq of levels to ignore.
+  The arity-3 version expects a logger, an operator and a level. Supported
+  operators are <=, <, =, >, >= passed as symbols."
+  ([logger operator level]
+   (with-levels-retained logger
+     (filtered-levels all-levels operator level)))
+  ([logger levels]
+   (with-transformation
+     logger
+     (filter
+       (fn [event]
+         ((set levels) (:level event)))))))
 
 (defn with-levels-ignored
-  "Returns a new logger which ignores log events having any of the provided
-  levels."
-  [logger levels]
-  (with-transformation
-    logger
-    (remove
-      (fn [event]
-        ((set levels) (:level event))))))
+  "Returns a new logger which ignores log events matching the provided criteria.
+
+  The arity-2 version expects a logger and a seq of levels to ignore.
+  The arity-3 version expects a logger, an operator and a level. Supported
+  operators are <=, <, =, >, >= passed as symbols."
+  ([logger operator level]
+   (with-levels-ignored logger
+     (filtered-levels all-levels operator level)))
+  ([logger levels]
+   (with-transformation
+     logger
+     (remove
+       (fn [event]
+         ((set levels) (:level event)))))))
 
 (defn with-types-retained
   "Returns a new logger which retains log events having one of the provided

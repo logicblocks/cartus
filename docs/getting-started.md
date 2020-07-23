@@ -11,16 +11,23 @@ support for multiple logging backends, currently including:
          
 `cartus` is heavily inspired by 
 [JUXT's blog post on logging](https://juxt.pro/blog/logging) which recommends 
-treating the logger as an injectable dependency like any other. Among other 
-things, this makes testing easier and allows the logging backend to be switched 
-out for different contexts.
+treating the logger as an injectable dependency like any other. This brings a 
+number of benefits:
+
+* Testing for log events becomes easy, since the logger implementation can be
+  switched out for one more amenable to testing.
+* More generally, different logging backends can be supported in different 
+  contexts.
+* Since the logger is passed as an explicit dependency, it can be transformed
+  in various ways, such as by adding context to all log events or filtering log 
+  events to only those of a certain set of types within a particular scope.
 
 ## Installation
 
 Add the following to your `project.clj` file:
 
 ```clojure
-[io.logicblocks/cartus "0.1.7"]
+[io.logicblocks/cartus.core "0.1.7"]
 ```
 
 ## Configuring a backend
@@ -29,6 +36,13 @@ Add the following to your `project.clj` file:
 
 The [[cartus.test/logger]] backend captures all logged events in memory in an
 atom, allowing your tests to assert that log events took place.
+
+To install the `cartus.test/logger` backend, add the following to your 
+`project.clj` file:
+
+```clojure
+[io.logicblocks/cartus.test "0.1.7"]
+```
 
 To create a `cartus.test/logger`:
 
@@ -45,8 +59,15 @@ which in turn uses [`SLF4J`](http://www.slf4j.org/) and
 [`logback`](http://logback.qos.ch/) to log out the log event either in a plain 
 text format or as JSON.
 
-To use the `cambium` logger, you must first choose a codec and backend for 
-`cambium`. 
+To install the `cartus.cambium/logger` backend, add the following to your 
+`project.clj` file:
+
+```clojure
+[io.logicblocks/cartus.cambium "0.1.7"]
+```
+
+Additionally, you must choose a codec and backend for `cambium`, which has 
+implementations for plain text logging and for JSON logging. 
 
 To use plain text logs, add the following to your `project.clj` file:
 
@@ -125,9 +146,29 @@ Once `cambium` is initialised, to create a `cartus.cambium/logger`:
 ### Custom backends
 
 All `cartus.core` functions expect an implementation of the 
-[[cartus.core/Logger]] protocol. To create a custom backend, simply implement 
-this protocol - the protocol's documentation gives full details of expectations
-on implementors.
+[[cartus.core/Logger]] protocol. 
+
+For example, to create a naive `StdoutLogger` which prints all log events to the 
+standard output stream as EDN:
+
+```clojure
+(ns example.stdout
+  (:require
+   [cartus.core :as core]))
+
+(defrecord StdoutLogger
+  []
+  core/Logger
+  (log [_ level type context opts]
+    (println 
+      (merge {:level level
+            :type type
+            :context context}
+        opts))))
+
+(defn logger []
+  (map->StdoutLogger {}))
+```
 
 ## Logging events
 
@@ -302,13 +343,19 @@ the log event:
 Note that in the case you use `cartus.core/log` directly, no metadata is 
 captured so metadata must be provided explicitly.
 
-## Setting global context
+## Applying transformations to loggers
 
 Since `cartus.core` functions accept the logger as an explicit dependency, you
-can easily add global context to a logger instance, using 
-[[cartus.core/with-global-context]]. This function returns a new logger which
-will merge the provided global context with the local context provided at log 
-time, with the local context taking preference:
+can easily apply transformations to the logger as it is passed down through
+function calls. This allows additional behaviour to be added to a logger in a
+scoped manner, irrespective of backend used.
+
+### Setting logger context
+
+To add logger context to a logger instance, use [[cartus.core/with-context]]. 
+This function returns a new logger which will merge the provided context map 
+with the context map provided at log time, with the log time context taking 
+preference:
 
 ```clojure
 (ns example.logging
@@ -319,7 +366,7 @@ time, with the local context taking preference:
 (cartus.cambium/initialise)
 
 (def standard-logger (cartus.cambium/logger))
-(def contextual-logger (cartus.core/with-global-context standard-logger
+(def contextual-logger (cartus.core/with-context standard-logger
                         {:request-id 5 :user-id 15}))
 
 (log/info contextual-logger ::service.requesting
@@ -342,6 +389,316 @@ time, with the local context taking preference:
 ; }
 ; "
 ```
+
+### Filtering by log levels
+
+To retain log events based on their level, use 
+[[cartus.core/with-levels-retained]]. This function returns a new logger which 
+will drop any log events that do not match the specified criteria based on a 
+couple of different variants as discussed below.
+
+To retain log events having a level within a provided set of levels:
+
+```clojure
+(ns example.logging
+  (:require
+   [cartus.core :as log]
+   [cartus.cambium]))
+
+(cartus.cambium/initialise)
+
+(def standard-logger (cartus.cambium/logger))
+(def filtered-logger (cartus.core/with-levels-retained standard-logger
+                        #{:warn :error}))
+
+(log/info filtered-logger ::service.requesting
+  {:request-id 10 :endpoint-name "check"})
+; => nothing logged
+
+(log/warn filtered-logger ::service.slow
+  {:latency-millis 5486})
+; "{
+;   \"timestamp\" : \"2020-07-19T15:21:42.436Z\",
+;   \"level\" : \"WARN\",
+;   \"thread\" : \"nREPL-session-796b74ce-6705-4cf7-a55c-d95b089b8b34\",
+;   \"latency-millis\" : 5486,
+;   \"ns\" : \"example.logging\",
+;   \"line\" : 15,
+;   \"column\" : 1,
+;   \"type\" : \"example.logging/service.slow\",
+;   \"logger\" : \"example.logging\",
+;   \"message\" : \"example.logging/service.slow\",
+;   \"context\" : \"default\"
+; }
+; "
+```
+
+To retain log events having a level greater than or equal to a specified level
+in severity:
+
+```clojure
+(ns example.logging
+  (:require
+   [cartus.core :as log]
+   [cartus.cambium]))
+
+(cartus.cambium/initialise)
+
+(def standard-logger (cartus.cambium/logger))
+(def filtered-logger 
+  (cartus.core/with-levels-retained standard-logger >= :info))
+
+(log/debug filtered-logger ::database.connection-pool.requesting
+  {:timeout-millis 200})
+; => nothing logged
+
+(log/info filtered-logger ::database.querying
+  {:query-name :find-user})
+; "{
+;   \"timestamp\" : \"2020-07-19T15:28:23.843Z\",
+;   \"level\" : \"INFO\",
+;   \"thread\" : \"nREPL-session-796b74ce-6705-4cf7-a55c-d95b089b8b34\",
+;   \"query-name\" : "find-user",
+;   \"ns\" : \"example.logging\",
+;   \"line\" : 15,
+;   \"column\" : 1,
+;   \"type\" : \"example.logging/database.querying\",
+;   \"logger\" : \"example.logging\",
+;   \"message\" : \"example.logging/database.querying\",
+;   \"context\" : \"default\"
+; }
+; "
+```
+
+The arity-3 version of [[cartus.core/with-levels-retained]] accepts the 
+operators `>=`, `>`, `=`, `<` and `<=`.
+
+To ignore log events based on their level, use 
+[[cartus.core/with-levels-ignored]]. This function returns a new logger which 
+will drop any log events that match the specified criteria based on a 
+couple of different variants as discussed below.
+
+To ignore log events having a level within a provided set of levels:
+
+```clojure
+(ns example.logging
+  (:require
+   [cartus.core :as log]
+   [cartus.cambium]))
+
+(cartus.cambium/initialise)
+
+(def standard-logger (cartus.cambium/logger))
+(def filtered-logger (cartus.core/with-levels-ignored standard-logger
+                        #{:warn :error}))
+
+(log/info filtered-logger ::service.requesting
+  {:request-id 10 :endpoint-name "check"})
+; =>
+; "{
+;   \"timestamp\" : \"2020-07-19T17:35:12.894Z\",
+;   \"level\" : \"INFO\",
+;   \"thread\" : \"nREPL-session-d8857a81-72f5-41ce-a107-eaecc7b75805\",
+;   \"request-id\" : 10,
+;   \"endpoint-name\" : \"check\",
+;   \"ns\" : \"example.logging\",
+;   \"line\" : 12,
+;   \"column\" : 1,
+;   \"type\" : \"example.logging/service.requesting\",
+;   \"logger\" : \"example.logging\",
+;   \"message\" : \"example.logging/service.requesting\",
+;   \"context\" : \"default\"
+; }
+; "
+
+(log/warn filtered-logger ::service.slow
+  {:latency-millis 5486})
+; => nothing logged
+```
+
+To ignore log events having a level less than or equal to a specified level
+in severity:
+
+```clojure
+(ns example.logging
+  (:require
+   [cartus.core :as log]
+   [cartus.cambium]))
+
+(cartus.cambium/initialise)
+
+(def standard-logger (cartus.cambium/logger))
+(def filtered-logger 
+  (cartus.core/with-levels-ignored standard-logger < :info))
+
+(log/debug filtered-logger ::database.connection-pool.requesting
+  {:timeout-millis 200})
+; => nothing logged
+
+(log/info filtered-logger ::database.querying
+  {:query-name :find-user})
+; "{
+;   \"timestamp\" : \"2020-07-19T17:48:13.983Z\",
+;   \"level\" : \"INFO\",
+;   \"thread\" : \"nREPL-session-b8bbb4af-f967-49eb-8ef3-9ad8f93376e8\",
+;   \"query-name\" : "find-user",
+;   \"ns\" : \"example.logging\",
+;   \"line\" : 15,
+;   \"column\" : 1,
+;   \"type\" : \"example.logging/database.querying\",
+;   \"logger\" : \"example.logging\",
+;   \"message\" : \"example.logging/database.querying\",
+;   \"context\" : \"default\"
+; }
+; "
+```
+
+The arity-3 version of [[cartus.core/with-levels-ignored]] accepts the 
+operators `>=`, `>`, `=`, `<` and `<=`.
+
+### Filtering by log types
+
+To retain log events based on their type, use 
+[[cartus.core/with-types-retained]]. This function returns a new logger which 
+will drop any log events not having a type in the provided set of types:
+
+```clojure
+(ns example.logging
+  (:require
+   [cartus.core :as log]
+   [cartus.cambium]))
+
+(cartus.cambium/initialise)
+
+(def standard-logger (cartus.cambium/logger))
+(def filtered-logger (cartus.core/with-types-retained standard-logger
+                        #{::order.rejected ::order.approved}))
+
+(log/debug filtered-logger ::order.pending
+  {:outstanding-steps [:payment]})
+; => nothing logged
+
+(log/info filtered-logger ::order.rejected
+  {:reason :card-payment-failed})
+; "{
+;   \"timestamp\" : \"2020-07-19T18:56:22.674Z\",
+;   \"level\" : \"INFO\",
+;   \"thread\" : \"nREPL-session-5d899bb7-3d16-4d84-81e0-691fc2df2c66\",
+;   \"reason\" : "card-payment-failed",
+;   \"ns\" : \"example.logging\",
+;   \"line\" : 15,
+;   \"column\" : 1,
+;   \"type\" : \"example.logging/order.rejected\",
+;   \"logger\" : \"example.logging\",
+;   \"message\" : \"example.logging/order.rejected\",
+;   \"context\" : \"default\"
+; }
+; "
+```
+
+To ignore log events based on their type, use 
+[[cartus.core/with-types-ignored]]. This function returns a new logger which 
+will drop any log events having a type in the provided set of types:
+
+```clojure
+(ns example.logging
+  (:require
+   [cartus.core :as log]
+   [cartus.cambium]))
+
+(cartus.cambium/initialise)
+
+(def standard-logger (cartus.cambium/logger))
+(def filtered-logger (cartus.core/with-types-ignored standard-logger
+                        #{::order.pending}))
+
+(log/debug filtered-logger ::order.pending
+  {:outstanding-steps [:payment]})
+; => nothing logged
+
+(log/info filtered-logger ::order.rejected
+  {:reason :card-payment-failed})
+; "{
+;   \"timestamp\" : \"2020-07-19T18:57:23.682Z\",
+;   \"level\" : \"INFO\",
+;   \"thread\" : \"nREPL-session-5d899bb7-3d16-4d84-81e0-691fc2df2c66\",
+;   \"reason\" : "card-payment-failed",
+;   \"ns\" : \"example.logging\",
+;   \"line\" : 15,
+;   \"column\" : 1,
+;   \"type\" : \"example.logging/order.rejected\",
+;   \"logger\" : \"example.logging\",
+;   \"message\" : \"example.logging/order.rejected\",
+;   \"context\" : \"default\"
+; }
+; "
+```
+
+### Applying arbitrary transformations
+
+More generally, a logger can be seen as a stream of log events. With this in 
+mind, `cartus` supports transducers being applied to loggers. This allows 
+arbitrarily complex transformations to be built up using Clojure's existing 
+transducer support.
+
+For example, to remove events that contain sensitive information and then map 
+all context keys to snake case before logging an event, you can use the 
+following: 
+
+```clojure
+(ns example.logging
+  (:require
+   [clojure.string :as string]
+   [clojure.walk :as walk]
+
+   [cartus.core :as log]
+   [cartus.cambium]))
+
+(cartus.cambium/initialise)
+
+(defn transform-keys
+  [t coll]
+  (let [f (fn [[k v]] [(t k) v])]
+    (walk/postwalk (fn [x] (if (map? x) (into {} (map f x)) x)) coll)))
+
+(defn ->camel-case [k]
+  (keyword 
+    (string/replace (name k) #"-(\w)"
+      #(string/upper-case (second %1)))))
+
+(def standard-logger (cartus.cambium/logger))
+(def filtered-logger 
+  (cartus.core/with-transformation standard-logger
+    (comp 
+      (filter #(not (contains? (:context %) :password)))
+      (map #(assoc % :context (transform-keys ->camel-case (:context %)))))))
+
+(log/debug filtered-logger ::order.pending
+  {:outstanding-steps [:payment]
+   :line-items [:item-1 :item-2]})
+; "{
+;   \"timestamp\" : \"2020-07-23T08:51:14.165Z\",
+;   \"level\" : \"DEBUG\",
+;   \"thread\" : \"nREPL-session-86b79ffc-6ce9-43af-91a9-0b1de812e86c\",
+;   \"lineItems\" : [\"item-1\",\"item-2\"],
+;   \"ns\" : \"example.logging\",
+;   \"line\" : 1,
+;   \"column\" : 1,
+;   \"outstandingSteps\" : [\"payment\"],
+;   \"type\" : \"example.logging/order.pending\",
+;   \"logger\" : \"example.logging\",
+;   \"message\" : \"example.logging/order.pending\",
+;   \"context\" : \"default\"
+; }
+; "
+
+(log/info filtered-logger ::registration.in-progress
+  {:password "super-secret"})
+; => nothing logged
+```
+
+All other transformations in [[cartus.core]] use the transducer support under
+the covers and can be used as examples when implementing your own.
 
 ## Testing for log events
 

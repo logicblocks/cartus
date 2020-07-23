@@ -62,10 +62,10 @@
                               :column 5}}}]
           (map first (spy/calls (:spy spying-logger)))))))
 
-(deftest ignores-logged-events-with-provided-levels
+(deftest retains-logged-events-greater-than-or-equal-to-provided-level
   (let [spying-logger (spying-logger)
-        amended-logger (cartus/with-levels-ignored
-                         spying-logger #{:trace :debug :info})
+        amended-logger (cartus/with-levels-retained
+                         spying-logger >= :warn)
 
         context {:some "context"}]
     (cartus/debug amended-logger ::debug.event context)
@@ -80,27 +80,232 @@
                               :column 5}}}]
           (map first (spy/calls (:spy spying-logger)))))))
 
+(deftest retains-logged-events-greater-than-provided-level
+  (let [spying-logger (spying-logger)
+        amended-logger (cartus/with-levels-retained
+                         spying-logger > :info)
+
+        context {:some "context"}]
+    ^{:line 5 :column 5} (cartus/debug amended-logger ::debug.event context)
+    ^{:line 6 :column 5} (cartus/warn amended-logger ::warn.event context)
+    ^{:line 7 :column 5} (cartus/info amended-logger ::info.event context)
+
+    (is (= [{:level   :warn
+             :type    ::warn.event
+             :context context
+             :opts    {:meta {:ns     (find-ns 'cartus.core-test)
+                              :line   6
+                              :column 5}}}]
+          (map first (spy/calls (:spy spying-logger)))))))
+
+(deftest retains-logged-events-with-level-equal-to-provided-level
+  (let [spying-logger (spying-logger)
+        amended-logger (cartus/with-levels-retained
+                         spying-logger = :info)
+
+        context {:some "context"}]
+    ^{:line 5 :column 5} (cartus/debug amended-logger ::debug.event context)
+    ^{:line 6 :column 5} (cartus/warn amended-logger ::warn.event context)
+    ^{:line 7 :column 5} (cartus/info amended-logger ::info.event context)
+    ^{:line 8 :column 5} (cartus/trace amended-logger ::trace.event context)
+
+    (is (= [{:level   :info
+             :type    ::info.event
+             :context context
+             :opts    {:meta {:ns     (find-ns 'cartus.core-test)
+                              :line   7
+                              :column 5}}}]
+          (map first (spy/calls (:spy spying-logger)))))))
+
+(deftest retains-logged-events-less-than-provided-level
+  (let [spying-logger (spying-logger)
+        amended-logger (cartus/with-levels-retained
+                         spying-logger < :info)
+
+        context {:some "context"}]
+    ^{:line 5 :column 5} (cartus/debug amended-logger ::debug.event context)
+    ^{:line 6 :column 5} (cartus/warn amended-logger ::warn.event context)
+    ^{:line 7 :column 5} (cartus/info amended-logger ::info.event context)
+
+    (is (= [{:level   :debug
+             :type    ::debug.event
+             :context context
+             :opts    {:meta {:ns     (find-ns 'cartus.core-test)
+                              :line   5
+                              :column 5}}}]
+          (map first (spy/calls (:spy spying-logger)))))))
+
+(deftest retains-logged-events-less-than-or-equal-to-provided-level
+  (let [spying-logger (spying-logger)
+        amended-logger (cartus/with-levels-retained
+                         spying-logger <= :info)
+
+        context {:some "context"}]
+    ^{:line 5 :column 5} (cartus/debug amended-logger ::debug.event context)
+    ^{:line 6 :column 5} (cartus/warn amended-logger ::warn.event context)
+    ^{:line 7 :column 5} (cartus/info amended-logger ::info.event context)
+
+    (is (= [{:level   :debug
+             :type    ::debug.event
+             :context context
+             :opts    {:meta {:ns     (find-ns 'cartus.core-test)
+                              :line   5
+                              :column 5}}}
+            {:level   :info
+             :type    ::info.event
+             :context context
+             :opts    {:meta {:ns     (find-ns 'cartus.core-test)
+                              :line   7
+                              :column 5}}}]
+          (map first (spy/calls (:spy spying-logger)))))))
+
+(deftest ignores-logged-events-with-provided-levels
+  (let [spying-logger (spying-logger)
+        amended-logger (cartus/with-levels-ignored
+                         spying-logger #{:trace :debug :info})
+
+        context {:some "context"}]
+    ^{:line 5 :column 5} (cartus/debug amended-logger ::debug.event context)
+    ^{:line 6 :column 5} (cartus/warn amended-logger ::warn.event context)
+    ^{:line 7 :column 5} (cartus/info amended-logger ::info.event context)
+
+    (is (= [{:level   :warn
+             :type    ::warn.event
+             :context context
+             :opts    {:meta {:ns     (find-ns 'cartus.core-test)
+                              :line   6
+                              :column 5}}}]
+          (map first (spy/calls (:spy spying-logger)))))))
+
+(deftest ignores-logged-events-greater-than-or-equal-to-provided-level
+  (let [spying-logger (spying-logger)
+        amended-logger (cartus/with-levels-ignored
+                         spying-logger >= :warn)
+
+        context {:some "context"}]
+    ^{:line 5 :column 5} (cartus/debug amended-logger ::debug.event context)
+    ^{:line 6 :column 5} (cartus/warn amended-logger ::warn.event context)
+    ^{:line 7 :column 5} (cartus/info amended-logger ::info.event context)
+
+    (is (= [{:level   :debug
+             :type    ::debug.event
+             :context context
+             :opts    {:meta {:ns     (find-ns 'cartus.core-test)
+                              :line   5
+                              :column 5}}}
+            {:level   :info
+             :type    ::info.event
+             :context context
+             :opts    {:meta {:ns     (find-ns 'cartus.core-test)
+                              :line   7
+                              :column 5}}}]
+          (map first (spy/calls (:spy spying-logger)))))))
+
+(deftest ignores-logged-events-greater-than-provided-level
+  (let [spying-logger (spying-logger)
+        amended-logger (cartus/with-levels-ignored
+                         spying-logger > :debug)
+
+        context {:some "context"}]
+    ^{:line 5 :column 5} (cartus/debug amended-logger ::debug.event context)
+    ^{:line 6 :column 5} (cartus/warn amended-logger ::warn.event context)
+    ^{:line 7 :column 5} (cartus/info amended-logger ::info.event context)
+
+    (is (= [{:level   :debug
+             :type    ::debug.event
+             :context context
+             :opts    {:meta {:ns     (find-ns 'cartus.core-test)
+                              :line   5
+                              :column 5}}}]
+          (map first (spy/calls (:spy spying-logger)))))))
+
+(deftest ignores-logged-events-with-level-equal-to-provided-level
+  (let [spying-logger (spying-logger)
+        amended-logger (cartus/with-levels-ignored
+                         spying-logger = :info)
+
+        context {:some "context"}]
+    ^{:line 5 :column 5} (cartus/debug amended-logger ::debug.event context)
+    ^{:line 6 :column 5} (cartus/info amended-logger ::info.event context)
+    ^{:line 7 :column 5} (cartus/trace amended-logger ::trace.event context)
+
+    (is (= [{:level   :debug
+             :type    ::debug.event
+             :context context
+             :opts    {:meta {:ns     (find-ns 'cartus.core-test)
+                              :line   5
+                              :column 5}}}
+            {:level   :trace
+             :type    ::trace.event
+             :context context
+             :opts    {:meta {:ns     (find-ns 'cartus.core-test)
+                              :line   7
+                              :column 5}}}]
+          (map first (spy/calls (:spy spying-logger)))))))
+
+(deftest ignores-logged-events-less-than-provided-level
+  (let [spying-logger (spying-logger)
+        amended-logger (cartus/with-levels-ignored
+                         spying-logger < :info)
+
+        context {:some "context"}]
+    ^{:line 5 :column 5} (cartus/debug amended-logger ::debug.event context)
+    ^{:line 6 :column 5} (cartus/warn amended-logger ::warn.event context)
+    ^{:line 7 :column 5} (cartus/info amended-logger ::info.event context)
+
+    (is (= [{:level   :warn
+             :type    ::warn.event
+             :context context
+             :opts    {:meta {:ns     (find-ns 'cartus.core-test)
+                              :line   6
+                              :column 5}}}
+            {:level   :info
+             :type    ::info.event
+             :context context
+             :opts    {:meta {:ns     (find-ns 'cartus.core-test)
+                              :line   7
+                              :column 5}}}]
+          (map first (spy/calls (:spy spying-logger)))))))
+
+(deftest ignores-logged-events-less-than-or-equal-to-provided-level
+  (let [spying-logger (spying-logger)
+        amended-logger (cartus/with-levels-ignored
+                         spying-logger <= :info)
+
+        context {:some "context"}]
+    ^{:line 5 :column 5} (cartus/debug amended-logger ::debug.event context)
+    ^{:line 6 :column 5} (cartus/warn amended-logger ::warn.event context)
+    ^{:line 7 :column 5} (cartus/info amended-logger ::info.event context)
+
+    (is (= [{:level   :warn
+             :type    ::warn.event
+             :context context
+             :opts    {:meta {:ns     (find-ns 'cartus.core-test)
+                              :line   6
+                              :column 5}}}]
+          (map first (spy/calls (:spy spying-logger)))))))
+
 (deftest retains-logged-events-with-provided-types
   (let [spying-logger (spying-logger)
         amended-logger (cartus/with-types-retained
                          spying-logger #{::type-1 ::type-2})
 
         context {:some "context"}]
-    (cartus/info amended-logger ::type-1 context)
-    (cartus/info amended-logger ::type-2 context)
-    (cartus/info amended-logger ::type-3 context)
+    ^{:line 5 :column 5} (cartus/info amended-logger ::type-1 context)
+    ^{:line 6 :column 5} (cartus/info amended-logger ::type-2 context)
+    ^{:line 7 :column 5} (cartus/info amended-logger ::type-3 context)
 
     (is (= [{:level   :info
              :type    ::type-1
              :context context
              :opts    {:meta {:ns     (find-ns 'cartus.core-test)
-                              :line   89
+                              :line   5
                               :column 5}}}
             {:level   :info
              :type    ::type-2
              :context context
              :opts    {:meta {:ns     (find-ns 'cartus.core-test)
-                              :line   90
+                              :line   6
                               :column 5}}}]
           (map first (spy/calls (:spy spying-logger)))))))
 
@@ -110,15 +315,15 @@
                          spying-logger #{::type-2 ::type-3})
 
         context {:some "context"}]
-    (cartus/info amended-logger ::type-1 context)
-    (cartus/info amended-logger ::type-2 context)
-    (cartus/info amended-logger ::type-3 context)
+    ^{:line 5 :column 5} (cartus/info amended-logger ::type-1 context)
+    ^{:line 6 :column 5} (cartus/info amended-logger ::type-2 context)
+    ^{:line 7 :column 5} (cartus/info amended-logger ::type-3 context)
 
     (is (= [{:level   :info
              :type    ::type-1
              :context context
              :opts    {:meta {:ns     (find-ns 'cartus.core-test)
-                              :line   113
+                              :line   5
                               :column 5}}}]
           (map first (spy/calls (:spy spying-logger)))))))
 
@@ -140,13 +345,13 @@
         transformed-logger
         (cartus/with-transformation logger
           (comp xform-1 xform-2))]
-    (cartus/info transformed-logger type-1 context)
-    (cartus/info transformed-logger type-2 context)
+    ^{:line 5 :column 5} (cartus/info transformed-logger type-1 context)
+    ^{:line 6 :column 5} (cartus/info transformed-logger type-2 context)
 
     (is (= [{:level   :info
              :type    type-1
              :context (assoc context :other "context")
              :opts    {:meta {:ns     (find-ns 'cartus.core-test)
-                              :line   143
+                              :line   5
                               :column 5}}}]
           (map first (spy/calls (:spy logger)))))))
