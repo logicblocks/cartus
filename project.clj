@@ -100,7 +100,7 @@
                     [ch.qos.logback/logback-classic "_"
                      :exclusions [org.slf4j/slf4j-api
                                   org.slf4j/slf4j-log4j12]]]
-     :source-paths ["core/src" "cambium/src" "test/src"]}]
+     :source-paths ["core/src" "cambium/src" "test/src" "null/src"]}]
 
    :prerelease
    {:release-tasks

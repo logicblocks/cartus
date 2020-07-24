@@ -4,10 +4,12 @@
 support for multiple logging backends, currently including:
 
 * a test logger for collecting logs in memory and asserting against 
-  them; and
+  them;
 * a [`cambium`](https://cambium-clojure.github.io/) logger for logging 
   out via [`SLF4J`](http://www.slf4j.org/) and 
-  [`logback`](http://logback.qos.ch/).
+  [`logback`](http://logback.qos.ch/); and
+* a null logger that ignores all logged events, useful as a default 
+  implementation or to turn off logging completely.
          
 `cartus` is heavily inspired by 
 [JUXT's blog post on logging](https://juxt.pro/blog/logging) which recommends 
@@ -141,6 +143,27 @@ Once `cambium` is initialised, to create a `cartus.cambium/logger`:
 
 ```clojure
 (def logger (cartus.cambium/logger))
+```
+
+### The `cartus.null/logger` backend
+
+The [[cartus.null/logger]] backend ignores all logged events which can be 
+useful to turn off logging completely or provide a default implementation in
+the case that one is not provided.
+
+To install the `cartus.null/logger` backend, add the following to your 
+`project.clj` file:
+
+```clojure
+[io.logicblocks/cartus.null "0.1.10"]
+```
+
+To create a `cartus.null/logger`:
+
+```clojure
+(require '[cartus.null])
+
+(def logger (cartus.null/logger))
 ```
 
 ### Custom backends
