@@ -323,6 +323,20 @@ which also capture metadata for the call site automatically:
 ; \"
 ; }
 ; "
+
+(log/fatal logger ::exception.unknown)
+; =>
+; "{
+;   \"timestamp\" : \"2020-07-18T17:06:22.932Z\",
+;   \"level\" : \"ERROR\",
+;   \"thread\" : \"nREPL-session-f070aa75-a886-4207-83f8-65f73c0ba556\",
+;   \"ns\" : \"example.logging\",
+;   \"line\" : 50,
+;   \"column\" : 1,
+;   \"type\" : \"example.logging/exception.unknown\",
+;   \"logger\" : \"example.logging\",
+;   \"context\" : \"default\"
+; }
 ``` 
 
 Alternatively, you can use the `cartus.core/log` function from 

@@ -162,11 +162,19 @@
            ""
            "`logger`, `type`, `context` and `opts` are as defined on "
            "[[Logger]]."])
-        arglists ''([logger type context] [logger type context opts])]
+        arglists ''([logger type]
+                    [logger type context]
+                    [logger type context opts])]
 
     `(defmacro ~level-symbol
        ~level-doc
        {:arglists ~arglists}
+
+       ([logger# type# context# opts#]
+        (with-meta
+          `(log ~logger# ~~level-keyword ~type# ~context#
+             (merge ~opts# {:meta (merge {:ns ~*ns*} ~~'(meta &form))}))
+          ~'(meta &form)))
 
        ([logger# type# context#]
         (with-meta
@@ -174,10 +182,10 @@
              {:meta (merge {:ns ~*ns*} ~~'(meta &form))})
           ~'(meta &form)))
 
-       ([logger# type# context# opts#]
+       ([logger# type#]
         (with-meta
-          `(log ~logger# ~~level-keyword ~type# ~context#
-             (merge ~opts# {:meta (merge {:ns ~*ns*} ~~'(meta &form))}))
+          `(log ~logger# ~~level-keyword ~type# {}
+             {:meta (merge {:ns ~*ns*} ~~'(meta &form))})
           ~'(meta &form))))))
 
 (declare

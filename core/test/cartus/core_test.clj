@@ -20,9 +20,58 @@
 (defn spying-logger []
   (map->SpyingLogger {:spy (spy/stub nil)}))
 
+(deftest logs-to-logger-at-level-with-type-and-correct-meta
+  (doseq [{:keys [level-keyword arity-2]} defs/level-defs]
+    (let [{:keys [log-fn meta]} arity-2
+          logger (spying-logger)
+          type ::some.event]
+      (log-fn logger type)
+
+      (is (= [{:level   level-keyword
+               :type    type
+               :context {}
+               :opts    {:meta
+                         (assoc meta
+                           :ns (find-ns 'cartus.test-support.definitions))}}]
+            (map first (spy/calls (:spy logger))))))))
+
+(deftest logs-to-logger-at-level-with-type-context-and-correct-meta
+  (doseq [{:keys [level-keyword arity-3]} defs/level-defs]
+    (let [{:keys [log-fn meta]} arity-3
+          logger (spying-logger)
+          type ::some.event
+          context {:some "context"}]
+      (log-fn logger type context)
+
+      (is (= [{:level   level-keyword
+               :type    type
+               :context context
+               :opts    {:meta
+                         (assoc meta
+                           :ns (find-ns 'cartus.test-support.definitions))}}]
+            (map first (spy/calls (:spy logger))))))))
+
+(deftest logs-to-logger-at-level-with-type-context-opts-and-correct-meta
+  (doseq [{:keys [level-keyword arity-4]} defs/level-defs]
+    (let [{:keys [log-fn meta]} arity-4
+          logger (spying-logger)
+          type ::some.event
+          context {:some "context"}
+          opts {:message "Something happened"
+                :exception (ex-info "Oops" {:data []})}
+          meta (assoc meta
+                 :ns (find-ns 'cartus.test-support.definitions))]
+      (log-fn logger type context opts)
+
+      (is (= [{:level   level-keyword
+               :type    type
+               :context context
+               :opts    (merge opts {:meta meta})}]
+            (map first (spy/calls (:spy logger))))))))
+
 (deftest adds-context-to-test-logger-with-log-time-context-priority
-  (doseq [{:keys [without-opts]} defs/level-defs]
-    (let [{:keys [log-fn]} without-opts
+  (doseq [{:keys [arity-3]} defs/level-defs]
+    (let [{:keys [log-fn]} arity-3
           call-context {:first  10
                         :second 20}
           logger-context {:first 1
@@ -44,21 +93,21 @@
                          spying-logger #{:info :warn :error})
 
         context {:some "context"}]
-    (cartus/debug amended-logger ::debug.event context)
-    (cartus/warn amended-logger ::warn.event context)
-    (cartus/info amended-logger ::info.event context)
+    ^{:line 5 :column 5} (cartus/debug amended-logger ::debug.event context)
+    ^{:line 6 :column 5} (cartus/warn amended-logger ::warn.event context)
+    ^{:line 7 :column 5} (cartus/info amended-logger ::info.event context)
 
     (is (= [{:level   :warn
              :type    ::warn.event
              :context context
              :opts    {:meta {:ns     (find-ns 'cartus.core-test)
-                              :line   48
+                              :line   6
                               :column 5}}}
             {:level   :info
              :type    ::info.event
              :context context
              :opts    {:meta {:ns     (find-ns 'cartus.core-test)
-                              :line   49
+                              :line   7
                               :column 5}}}]
           (map first (spy/calls (:spy spying-logger)))))))
 
@@ -68,15 +117,15 @@
                          spying-logger >= :warn)
 
         context {:some "context"}]
-    (cartus/debug amended-logger ::debug.event context)
-    (cartus/warn amended-logger ::warn.event context)
-    (cartus/info amended-logger ::info.event context)
+    ^{:line 5 :column 5} (cartus/debug amended-logger ::debug.event context)
+    ^{:line 6 :column 5} (cartus/warn amended-logger ::warn.event context)
+    ^{:line 7 :column 5} (cartus/info amended-logger ::info.event context)
 
     (is (= [{:level   :warn
              :type    ::warn.event
              :context context
              :opts    {:meta {:ns     (find-ns 'cartus.core-test)
-                              :line   72
+                              :line   6
                               :column 5}}}]
           (map first (spy/calls (:spy spying-logger)))))))
 
