@@ -74,6 +74,7 @@ namespace :pipeline do
 end
 
 namespace :library do
+  desc "Initialise all modules in the local maven repository"
   task :initialise => [:'leiningen:ensure'] do
     RubyLeiningen.modules(command: "install")
   end
