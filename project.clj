@@ -1,4 +1,4 @@
-(defproject io.logicblocks/cartus "0.1.11-RC3"
+(defproject io.logicblocks/cartus "0.1.11-RC4"
   :description "Parent for all cartus modules."
 
   :plugins [[lein-modules "0.3.11"]
