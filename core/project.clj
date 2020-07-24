@@ -1,4 +1,4 @@
-(defproject io.logicblocks/cartus.core "0.1.12"
+(defproject io.logicblocks/cartus.core "0.1.13-RC1"
   :description "A structured logging abstraction with multiple backends."
 
   :plugins  [[lein-modules "0.3.11"]])
