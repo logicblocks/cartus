@@ -11,6 +11,8 @@ multiple backends, currently including:
 * a [`cambium`](https://cambium-clojure.github.io/) logger for logging 
   out via [`SLF4J`](http://www.slf4j.org/) and 
   [`logback`](http://logback.qos.ch/).
+* a null logger that ignores all logged events, useful as a default 
+  implementation or to turn off logging completely.
   
 Heavily inspired by [JUXT's blog post on logging](https://juxt.pro/blog/logging).
 
