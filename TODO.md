@@ -2,4 +2,4 @@ ToDo
 ====
 
 * Add custom assertions for clojure.test
-* Allow empty context map
+* Add re-typing and re-levelling transformations.
