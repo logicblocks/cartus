@@ -64,6 +64,10 @@
     eftest                         "0.5.9"
     tortue/spy                     "2.0.0"
 
+    nubank/matcher-combinators     "3.1.1"
+
+    org.clojure/math.combinatorics "0.1.6"
+
     io.logicblocks/cartus.core     :version}}
 
   :profiles

@@ -3,4 +3,8 @@
 
   :plugins  [[lein-modules "0.3.11"]]
 
-  :dependencies [[io.logicblocks/cartus.core :version]])
+  :dependencies [[org.clojure/math.combinatorics "_"]
+
+                 [nubank/matcher-combinators "_"]
+
+                 [io.logicblocks/cartus.core :version]])

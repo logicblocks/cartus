@@ -9,9 +9,15 @@
    [clojure.string :as string]
    [clojure.tools.namespace.repl :refer [refresh refresh-all clear]]
 
+   [matcher-combinators.ansi-color :as mc-ansi]
+
    [eftest.runner :refer [find-tests run-tests]]))
+
+(alter-var-root #'mc-ansi/*use-color*
+  (constantly false))
 
 (defn run-tests-in [& dirs]
   (run-tests
     (find-tests dirs)
-    {:multithread? false}))
+    {:multithread? false
+     :capture-output? false}))
