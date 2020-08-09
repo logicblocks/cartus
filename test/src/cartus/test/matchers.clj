@@ -1,13 +1,13 @@
 (ns cartus.test.matchers
   (:require
-   [clojure.pprint :as pp]
+   [clojure.tools.trace :as trace]
    [clojure.math.combinatorics :as comb]
 
    [matcher-combinators.core :as mc-core]
-   [matcher-combinators.model :as mc-model])
+   [matcher-combinators.model :as mc-model]
+   [matcher-combinators.result :as mc-result])
   (:import
-   [matcher_combinators.model Missing Mismatch]
-   [java.io StringWriter]))
+   [matcher_combinators.model Missing Mismatch]))
 
 (defrecord Ignored [actual])
 
@@ -16,25 +16,28 @@
    (validate-input expected actual pred pred matcher-name type))
   ([expected actual expected-pred actual-pred matcher-name type]
    (cond
-     (= actual :matcher-combinators.core/missing)
-     {:matcher-combinators.result/type   :mismatch
-      :matcher-combinators.result/value  (mc-model/->Missing expected)
-      :matcher-combinators.result/weight 1}
+     (= actual ::mc-core/missing)
+     {::mc-result/type   :mismatch
+      ::mc-result/value  (mc-model/->Missing
+                           (if (fn? expected)
+                             (str "predicate: " expected)
+                             expected))
+      ::mc-result/weight 1}
 
      (not (expected-pred expected))
-     {:matcher-combinators.result/type   :mismatch
-      :matcher-combinators.result/value  (mc-model/->InvalidMatcherType
-                                           (str "provided: " expected)
-                                           (str matcher-name " "
-                                             "should be called with "
-                                             "'expected' argument of type: "
-                                             type))
-      :matcher-combinators.result/weight 1}
+     {::mc-result/type   :mismatch
+      ::mc-result/value  (mc-model/->InvalidMatcherType
+                           (str "provided: " expected)
+                           (str matcher-name " "
+                             "should be called with "
+                             "'expected' argument of type: "
+                             type))
+      ::mc-result/weight 1}
 
      (not (actual-pred actual))
-     {:matcher-combinators.result/type   :mismatch
-      :matcher-combinators.result/value  (mc-model/->Mismatch expected actual)
-      :matcher-combinators.result/weight 1}
+     {::mc-result/type   :mismatch
+      ::mc-result/value  (mc-model/->Mismatch expected actual)
+      ::mc-result/weight 1}
 
      :else
      nil)))
@@ -42,96 +45,114 @@
 (defn insert [v i e]
   (vec (concat (take i v) [e] (drop i v))))
 
-(defn- trace [description object]
-  (let [writer (new StringWriter)]
-    (pp/pprint object writer)
-    (print (str (name description) "\n" (str writer)))))
-
 (defn match-candidates [elements n]
-  (set
-    (apply concat
-      (comb/combinations elements n)
-      (for [i (range 1 n)]
-        (mapcat
-          #(for [ps (apply comb/cartesian-product
-                      (repeat (- n (- n i)) (range n)))
-                 :when (apply < ps)]
-             (reduce (fn [c p] (insert c p ::any)) % ps))
-          (comb/combinations elements (- n i)))))))
+  (apply concat
+    (comb/combinations elements n)
+    (for [i (range 1 (inc n))]
+      (mapcat
+        #(for [ps (apply comb/cartesian-product
+                    (repeat i (range n)))
+               :when (apply < ps)]
+           (reduce (fn [c p] (insert c p ::missing)) % ps))
+        (comb/combinations elements (- n i))))))
 
 (defn match-candidate-result [match-candidate matchers]
+  (trace/trace "match-candidate" match-candidate)
   (let [results
         (map
           (fn [matcher element]
-            (if (= ::any element)
-              {:matcher-combinators.result/type   :mismatch
-               :matcher-combinators.result/value  (mc-model/->Missing matcher)
-               :matcher-combinators.result/weight 1}
-              (mc-core/match matcher element)))
+            (trace/trace "matcher" matcher)
+            (trace/trace "element" element)
+            {:matcher matcher
+             :element element
+             :result  (if (= ::missing element)
+                        {::mc-result/type   :mismatch
+                         ::mc-result/value  (mc-model/->Missing
+                                              (if (fn? matcher)
+                                                (str "predicate: " matcher)
+                                                matcher))
+                         ::mc-result/weight 1}
+                        (mc-core/match matcher element))})
           matchers
           match-candidate)
         result
         (reduce
-          (fn [overall-result element-result]
-            (let [type
-                  (if (= (:matcher-combinators.result/type overall-result)
-                        :mismatch)
-                    :mismatch
-                    (:matcher-combinators.result/type element-result))
-                  value
-                  (concat
-                    (:matcher-combinators.result/value overall-result)
-                    [(:matcher-combinators.result/value element-result)])
-                  weight
-                  (+
-                    (:matcher-combinators.result/weight overall-result)
-                    (:matcher-combinators.result/weight element-result))]
-              {:matcher-combinators.result/type   type
-               :matcher-combinators.result/value  value
-               :matcher-combinators.result/weight weight}))
-          {:matcher-combinators.result/type   :match
-           :matcher-combinators.result/value  (empty matchers)
-           :matcher-combinators.result/weight 0}
+          (fn [overall-result {:keys [matcher element result]}]
+            {::mc-result/type     (if (= (::mc-result/type overall-result)
+                                        :mismatch)
+                                    :mismatch
+                                    (::mc-result/type result))
+             ::mc-result/value    (concat
+                                    (::mc-result/value overall-result)
+                                    [(::mc-result/value result)])
+             ::mc-result/matchers (concat
+                                    (::mc-result/matchers overall-result)
+                                    [matcher])
+             ::mc-result/elements (concat
+                                    (::mc-result/elements overall-result)
+                                    [element])
+             ::mc-result/weight   (+
+                                    (::mc-result/weight overall-result)
+                                    (::mc-result/weight result))})
+          {::mc-result/type     :match
+           ::mc-result/value    (empty matchers)
+           ::mc-result/matchers (empty matchers)
+           ::mc-result/elements (empty matchers)
+           ::mc-result/weight   0}
           results)]
     result))
 
 (defn match-subsequence [matchers elements]
   (let [match-candidates (match-candidates elements (count matchers))
         match-results
-        (map #(match-candidate-result % matchers) match-candidates)
+        (map (fn [c]
+               (let [r (match-candidate-result c matchers)]
+                 (trace/trace "match-result" r)
+                 r))
+          match-candidates)
         match
         (first
           (filter
-            #(= (:matcher-combinators.result/type %) :match)
+            #(= (::mc-result/type %) :match)
             match-results))]
+    (trace/trace "match" match)
     (or match
       (let [best-mismatch
-            (first (sort-by :matcher-combinators.result/weight match-results))
+            (first (sort-by ::mc-result/weight match-results))
+            _ (trace/trace "best-mismatch" best-mismatch)
             {:keys [value remaining]}
             (reduce
               (fn [{:keys [remaining value]} element]
-                (let [[mismatches [next]]
-                      (split-with
-                        (fn [e]
-                          (or
-                            (instance? Missing e)
-                            (instance? Mismatch e)))
-                        remaining)]
-                  (if (= element next)
-                    {:remaining (drop (inc (count mismatches)) remaining)
-                     :value     (concat value mismatches [element])}
+                (let [[missing [next]]
+                      (split-with #(instance? Missing (first %)) remaining)]
+                  (trace/trace "--------------" nil)
+                  (trace/trace "remaining" remaining)
+                  (trace/trace "value" value)
+                  (trace/trace "element" element)
+                  (trace/trace "missing" missing)
+                  (trace/trace "next" next)
+                  (cond
+                    (= element (second next))
+                    {:remaining (drop (inc (count missing)) remaining)
+                     :value     (concat value (map first missing)
+                                  [(first next)])}
+
+                    (instance? Mismatch (first next))
+                    {:remaining (drop (inc (count missing)) remaining)
+                     :value     (concat value (map first missing)
+                                  [(first next)])}
+
+                    :else
                     {:remaining remaining
                      :value     (concat value [(->Ignored element)])})))
-              {:remaining (:matcher-combinators.result/value best-mismatch)
+              {:remaining (map vector
+                            (::mc-result/value best-mismatch)
+                            (::mc-result/elements best-mismatch))
                :value     []}
-              elements)
-            remaining
-            (map (fn [e] (if (instance? Mismatch e)
-                           (mc-model/->Missing (:expected e))
-                           e))
-              remaining)]
-        (assoc best-mismatch
-          :matcher-combinators.result/value (concat value remaining))))))
+              elements)]
+        {::mc-result/type   :mismatch
+         ::mc-result/value  (concat value (map first remaining))
+         ::mc-result/weight (::mc-result/weight best-mismatch)}))))
 
 (defrecord SubsequencesSeq [expected]
            mc-core/Matcher

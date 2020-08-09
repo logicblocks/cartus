@@ -5,7 +5,6 @@
 
    [matcher-combinators.core :as mc-core]
    [matcher-combinators.clj-test :as mc-test]
-   [matcher-combinators.matchers :as mc-matchers]
 
    [cartus.core :as cartus]
    [cartus.test.matchers :as cartus-matchers]))
@@ -113,7 +112,7 @@
                     (str "non-matcher log specs provided: " '~form))})
 
        :else
-       (let [matcher# resolved-log-specs#
+       (let [matcher# (cartus-matchers/subsequences resolved-log-specs#)
              result# (mc-core/match matcher# (cartus-test/events logger#))
              match?# (mc-core/indicates-match? result#)]
          (test/do-report

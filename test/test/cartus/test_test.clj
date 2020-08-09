@@ -212,7 +212,7 @@
                    :type    type
                    :context context
                    :meta    {:ns     (find-ns 'cartus.test-test)
-                             :line   1
+                             :line   2
                              :column 1}}
 
         report (reports/report-on (logged? logger log-event))
@@ -223,7 +223,7 @@
     (is (= [(merge log-event
               {:meta
                {:ns     (find-ns 'cartus.test-test)
-                :line   (reports/mismatch {:expected 1 :actual 2})
+                :line   2
                 :column (reports/mismatch {:expected 1 :actual 2})}})]
           (:matcher-combinators.result/value match-result)))))
 
@@ -331,20 +331,20 @@
              "(logged? logger log-spec)")
           (name (:actual report))))))
 
-#_(deftest logged?-allows-surplus-log-events-by-default
-    (let [logger (cartus-test/logger)
-          type-1 ::some.event.1
-          type-2 ::some.event.2
-          type-3 ::some.event.3
-          context {:some "context"}
+(deftest logged?-allows-surplus-log-events-by-default
+  (let [logger (cartus-test/logger)
+        type-1 ::some.event.1
+        type-2 ::some.event.2
+        type-3 ::some.event.3
+        context {:some "context"}
 
-          _ (cartus-core/info logger type-1 context)
-          _ (cartus-core/info logger type-2 context)
-          _ (cartus-core/info logger type-3 context)
+        _ (cartus-core/info logger type-1 context)
+        _ (cartus-core/info logger type-2 context)
+        _ (cartus-core/info logger type-3 context)
 
-          log-event {:level   :info
-                     :type    type-2
-                     :context context}
+        log-event {:level   :info
+                   :type    type-2
+                   :context context}
 
-          report (reports/report-on (logged? logger log-event))]
-      (is (= :pass (:type report)))))
+        report (reports/report-on (logged? logger log-event))]
+    (is (= :pass (:type report)))))
