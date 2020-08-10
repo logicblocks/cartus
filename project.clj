@@ -92,6 +92,10 @@
    [:shared
     {:dependencies [[io.logicblocks/cartus.core :version]
 
+                    [org.clojure/math.combinatorics "_"]
+
+                    [nubank/matcher-combinators "_"]
+
                     [cambium/cambium.core "_"]
                     [cambium/cambium.codec-cheshire "_"]
                     [cambium/cambium.logback.core "_"]

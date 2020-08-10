@@ -1,6 +1,5 @@
-(ns cartus.test.matchers
+(ns ^:no-doc cartus.test.matchers
   (:require
-   [clojure.tools.trace :as trace]
    [clojure.math.combinatorics :as comb]
 
    [matcher-combinators.core :as mc]

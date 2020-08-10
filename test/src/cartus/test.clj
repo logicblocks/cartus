@@ -36,21 +36,78 @@
   [test-logger]
   @(:events test-logger))
 
-(def call-expectation
-  (symbol
-    (str
-      "logged? to be called with a test logger, an optional set "
-      "of modifiers and at least one log event spec")))
+(declare
+  ^{:doc
+    "Asserts that the logger received the log events.
 
-(defn valid-modifiers? [modifiers]
-  (not
-    (or
-      (sets/subset? #{:fuzzy-contents :strict-contents} modifiers)
-      (sets/subset? #{:only :at-least} modifiers)
-      (sets/subset? #{:in-order :in-any-order} modifiers))))
+    Takes either a logger and a variable number of log events or a logger,
+    a set of modifiers and a variable number of log events:
+
+      - `logger` must be a [[cartus.test/logger]]
+      - `modifiers` can be combinations of:
+        - `#{:in-order :in-any-order}` to specify ordering constraints, defaults
+          to `:in-order`
+        - `#{:only :at-least}` to specify whether the provided logs must exactly
+          match the log events logged to the logger or whether they represent
+          a subset, defaults to `:at-least`
+        - `#{:fuzzy-contents :strict-contents}` to specify whether log events
+          should be matched fuzzily, i.e., surplus keys can be present in the
+          log event map, or strictly, i.e., the keys and values must match
+          exactly, defaults to `:fuzzy-contents`
+      - each log event is a partial or full map of the log event as returned
+        by [[events]].
+
+    Internally, `logged?` uses the `matcher-combinators` library meaning more
+    complex log event specifications can be provided, including using
+    predicates to match parts of the log events. See the
+    [Getting Started](https://logicblocks.github.io/cartus/getting-started.html)
+    guide for more details.
+
+    Examples:
+
+    ```
+    (is (logged? logger
+      {:level   :debug
+       :type    :service.database/connection-pool.started
+       :context {:max-connections 10}}))
+    ```
+
+    ```
+    (is (logged? logger #{:in-any-order :strict-contents}
+      {:level   :info
+       :type    :service.database/connection-pool.online.starting
+       :context {:max-connections 10}
+       :meta    {:ns     (find-ns 'service.database)
+                 :line   1
+                 :column 1}}
+       {:level   :info
+       :type    :service.database/connection-pool.batch.starting
+       :context {:max-connections 3}
+       :meta    {:ns     (find-ns 'service.database)
+                 :line   2
+                 :column 1}}))
+    ```"
+    :arglists
+    '([logger & log-events]
+      [logger modifiers & log-events])}
+  logged?)
 
 (defmethod test/assert-expr 'logged? [msg form]
-  `(let [args# (list ~@(rest form))
+  `(let [valid-modifiers?#
+         (fn [modifiers#]
+           (not
+             (or
+               (sets/subset? #{:fuzzy-contents :strict-contents} modifiers#)
+               (sets/subset? #{:only :at-least} modifiers#)
+               (sets/subset? #{:in-order :in-any-order} modifiers#))))
+
+         call-expectation#
+         (symbol
+           (str
+             "logged? to be called with a test logger, an optional set "
+             "of modifiers and at least one log event spec"))
+
+         args# (list ~@(rest form))
          arg-count# (count args#)
 
          [logger# modifiers# & log-specs#] args#
@@ -69,7 +126,7 @@
        (test/do-report
          {:type     :fail
           :message  ~msg
-          :expected call-expectation
+          :expected call-expectation#
           :actual   (symbol
                       (str "only " arg-count# " argument was provided: "
                         '~form))})
@@ -78,7 +135,7 @@
        (test/do-report
          {:type     :fail
           :message  ~msg
-          :expected call-expectation
+          :expected call-expectation#
           :actual   (symbol
                       (str "no log specs were provided: " '~form))})
 
@@ -86,7 +143,7 @@
        (test/do-report
          {:type     :fail
           :message  ~msg
-          :expected call-expectation
+          :expected call-expectation#
           :actual   (symbol
                       (str "non-set modifiers provided: " '~form))})
 
@@ -94,7 +151,7 @@
        (test/do-report
          {:type     :fail
           :message  ~msg
-          :expected call-expectation
+          :expected call-expectation#
           :actual   (symbol
                       (str "instance other than test logger provided: "
                         '~form))})
@@ -103,15 +160,15 @@
        (test/do-report
          {:type     :fail
           :message  ~msg
-          :expected call-expectation
+          :expected call-expectation#
           :actual   (symbol
                       (str "non-matcher log specs provided: " '~form))})
 
-       (not (valid-modifiers? resolved-modifiers#))
+       (not (valid-modifiers?# resolved-modifiers#))
        (test/do-report
          {:type     :fail
           :message  ~msg
-          :expected call-expectation
+          :expected call-expectation#
           :actual   (symbol
                       (str "invalid combination of modifiers provided: "
                         '~form))})
