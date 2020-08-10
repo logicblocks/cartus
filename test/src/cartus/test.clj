@@ -2,7 +2,7 @@
   "A [[cartus.core/Logger]] implementation and utilities for use in tests."
   (:require
    [clojure.test :as test]
-   [clojure.set :as set]
+   [clojure.set :as sets]
 
    [matcher-combinators.core :as mc-core]
    [matcher-combinators.matchers :as mc-matchers]
@@ -36,19 +36,6 @@
   [test-logger]
   @(:events test-logger))
 
-#{:in-order :only :fuzzy-contents}
-#{:in-order :only :strict-contents}
-#{:in-any-order :only :fuzzy-contents}                      ; (mc-matchers/in-any-order delegate)
-#{:in-any-order :only :strict-contents}
-#{:in-order :at-least :without-gaps :fuzzy-contents}
-#{:in-order :at-least :without-gaps :strict-contents}
-#{:in-order :at-least :with-gaps :fuzzy-contents}           ; <= default
-#{:in-order :at-least :with-gaps :strict-contents}
-#{:in-any-order :at-least :without-gaps :fuzzy-contents}
-#{:in-any-order :at-least :without-gaps :strict-contents}
-#{:in-any-order :at-least :with-gaps :fuzzy-contents}       ; (mc-matchers/match-with [vector? mc-matchers/embeds] delegate)
-#{:in-any-order :at-least :with-gaps :strict-contents}
-
 (def call-expectation
   (symbol
     (str
@@ -58,8 +45,9 @@
 (defn valid-modifiers? [modifiers]
   (not
     (or
-      (set/subset? #{:fuzzy-contents :strict-contents} modifiers)
-      (set/subset? #{:only :at-least} modifiers))))
+      (sets/subset? #{:fuzzy-contents :strict-contents} modifiers)
+      (sets/subset? #{:only :at-least} modifiers)
+      (sets/subset? #{:in-order :in-any-order} modifiers))))
 
 (defmethod test/assert-expr 'logged? [msg form]
   `(let [args# (list ~@(rest form))
@@ -135,8 +123,16 @@
                           overrides#)
 
              matcher# (cond
+                        (sets/subset?
+                          #{:only :in-any-order} resolved-modifiers#)
+                        (mc-matchers/in-any-order resolved-log-specs#)
+
                         (:only resolved-modifiers#)
                         (mc-matchers/equals resolved-log-specs#)
+
+                        (:in-any-order resolved-modifiers#)
+                        (mc-matchers/embeds resolved-log-specs#)
+
                         :else
                         (cartus-matchers/subsequences resolved-log-specs#))
              matcher# (if (not-empty overrides#)
