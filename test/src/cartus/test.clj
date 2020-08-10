@@ -2,8 +2,10 @@
   "A [[cartus.core/Logger]] implementation and utilities for use in tests."
   (:require
    [clojure.test :as test]
+   [clojure.set :as set]
 
    [matcher-combinators.core :as mc-core]
+   [matcher-combinators.matchers :as mc-matchers]
    [matcher-combinators.clj-test :as mc-test]
 
    [cartus.core :as cartus]
@@ -53,6 +55,12 @@
       "logged? to be called with a test logger, an optional set "
       "of modifiers and at least one log event spec")))
 
+(defn valid-modifiers? [modifiers]
+  (not
+    (or
+      (set/subset? #{:fuzzy-contents :strict-contents} modifiers)
+      (set/subset? #{:only :at-least} modifiers))))
+
 (defmethod test/assert-expr 'logged? [msg form]
   `(let [args# (list ~@(rest form))
          arg-count# (count args#)
@@ -96,23 +104,45 @@
 
        (not (instance? TestLogger logger#))
        (test/do-report
-         {:type :fail
-          :message ~msg
+         {:type     :fail
+          :message  ~msg
           :expected call-expectation
-          :actual (symbol
-                    (str "instance other than test logger provided: "
-                      '~form))})
+          :actual   (symbol
+                      (str "instance other than test logger provided: "
+                        '~form))})
 
        (not (mc-core/matcher? resolved-log-specs#))
        (test/do-report
-         {:type :fail
-          :message ~msg
+         {:type     :fail
+          :message  ~msg
           :expected call-expectation
-          :actual (symbol
-                    (str "non-matcher log specs provided: " '~form))})
+          :actual   (symbol
+                      (str "non-matcher log specs provided: " '~form))})
+
+       (not (valid-modifiers? resolved-modifiers#))
+       (test/do-report
+         {:type     :fail
+          :message  ~msg
+          :expected call-expectation
+          :actual   (symbol
+                      (str "invalid combination of modifiers provided: "
+                        '~form))})
 
        :else
-       (let [matcher# (cartus-matchers/subsequences resolved-log-specs#)
+       (let [overrides# {}
+             overrides# (if (:strict-contents resolved-modifiers#)
+                          (merge overrides# {map? mc-matchers/equals})
+                          overrides#)
+
+             matcher# (cond
+                        (:only resolved-modifiers#)
+                        (mc-matchers/equals resolved-log-specs#)
+                        :else
+                        (cartus-matchers/subsequences resolved-log-specs#))
+             matcher# (if (not-empty overrides#)
+                        (mc-matchers/match-with overrides# matcher#)
+                        matcher#)
+
              result# (mc-core/match matcher# (cartus-test/events logger#))
              match?# (mc-core/indicates-match? result#)]
          (test/do-report

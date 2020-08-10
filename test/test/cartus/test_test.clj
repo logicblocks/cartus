@@ -2,6 +2,8 @@
   (:require
    [clojure.test :refer [deftest is]]
 
+   [matcher-combinators.matchers :as mc-matchers]
+
    [cartus.core :as cartus-core]
    [cartus.test :as cartus-test]
 
@@ -111,6 +113,65 @@
 
         report (reports/report-on (logged? logger log-event))]
     (is (= :pass (:type report)))))
+
+(deftest logged?-uses-fuzzy-matching-on-log-event-when-specified
+  (let [logger (cartus-test/logger)
+        type ::some.event
+        context {:some "context"}
+
+        _ (cartus-core/info logger type context)
+
+        log-event {:type    type
+                   :context context}
+
+        report (reports/report-on
+                 (logged? logger #{:fuzzy-contents} log-event))]
+    (is (= :pass (:type report)))))
+
+(deftest logged?-uses-strict-matching-on-log-event-when-specified
+  (let [->expected-matcher
+        (fn [value]
+          (mc-matchers/match-with
+            {map? mc-matchers/equals}
+            value))
+
+        logger (cartus-test/logger)
+        type ::some.event
+        context {:some "context"}
+
+        _ ^{:line 1 :column 1} (cartus-core/info logger type context)
+
+        complete-log-event {:context context
+                            :level   :info
+                            :meta    {:column 1
+                                      :line   1
+                                      :ns     (find-ns 'cartus.test-test)}
+                            :type    type}
+        incomplete-log-event {:type    type
+                              :context context}
+
+        passing-report
+        (reports/report-on
+          (logged? logger #{:strict-contents} complete-log-event))
+        failing-report
+        (reports/report-on
+          (logged? logger #{:strict-contents} incomplete-log-event))
+
+        failing-match-result (get-in failing-report [:actual :match-result])]
+    (is (= :pass (:type passing-report)))
+    (is (= :fail (:type failing-report)))
+    (is (= :mismatch (:matcher-combinators.result/type failing-match-result)))
+    (is (= [(reports/ignored
+              {:context context
+               :level   :info
+               :meta    {:column 1
+                         :line   1
+                         :ns     (find-ns 'cartus.test-test)}
+               :type    type})
+            (reports/missing
+              {:type    (->expected-matcher type)
+               :context (->expected-matcher context)})]
+          (:matcher-combinators.result/value failing-match-result)))))
 
 (deftest logged?-fails-when-no-log-events-available
   (let [logger (cartus-test/logger)
@@ -318,6 +379,34 @@
     (is (= "non-set modifiers provided: (logged? logger modifiers log-spec)"
           (name (:actual report))))))
 
+(deftest logged?-fails-when-passed-both-fuzzy-and-strict-contents-modifiers
+  (let [logger (cartus-test/logger)
+        modifiers #{:fuzzy-contents :strict-contents}
+        log-spec {:level :info}
+
+        report (reports/report-on (logged? logger modifiers log-spec))]
+    (is (= :fail (:type report)))
+    (is (= (str "logged? to be called with a test logger, an optional set of "
+             "modifiers and at least one log event spec")
+          (name (:expected report))))
+    (is (= (str "invalid combination of modifiers provided: "
+             "(logged? logger modifiers log-spec)")
+          (name (:actual report))))))
+
+(deftest logged?-fails-when-passed-both-only-and-at-least-modifiers
+  (let [logger (cartus-test/logger)
+        modifiers #{:only :at-least}
+        log-spec {:level :info}
+
+        report (reports/report-on (logged? logger modifiers log-spec))]
+    (is (= :fail (:type report)))
+    (is (= (str "logged? to be called with a test logger, an optional set of "
+             "modifiers and at least one log event spec")
+          (name (:expected report))))
+    (is (= (str "invalid combination of modifiers provided: "
+             "(logged? logger modifiers log-spec)")
+          (name (:actual report))))))
+
 (deftest logged?-fails-when-passed-non-logger
   (let [logger {}
         log-spec {:level :info}
@@ -348,3 +437,79 @@
 
         report (reports/report-on (logged? logger log-event))]
     (is (= :pass (:type report)))))
+
+(deftest logged?-allows-surplus-log-events-when-specified
+  (let [logger (cartus-test/logger)
+        type-1 ::some.event.1
+        type-2 ::some.event.2
+        type-3 ::some.event.3
+        context {:some "context"}
+
+        _ (cartus-core/info logger type-1 context)
+        _ (cartus-core/info logger type-2 context)
+        _ (cartus-core/info logger type-3 context)
+
+        log-event {:level   :info
+                   :type    type-2
+                   :context context}
+
+        report (reports/report-on
+                 (logged? logger #{:at-least} log-event))]
+    (is (= :pass (:type report)))))
+
+(deftest logged?-disallows-surplus-log-events-when-specified
+  (let [logger (cartus-test/logger)
+        type-1 ::some.event.1
+        type-2 ::some.event.2
+        type-3 ::some.event.3
+        context {:some "context"}
+
+        _ ^{:line 1 :column 1} (cartus-core/info logger type-1 context)
+        _ ^{:line 2 :column 1} (cartus-core/info logger type-2 context)
+        _ ^{:line 3 :column 1} (cartus-core/info logger type-3 context)
+
+        log-event-1 {:level   :info
+                     :type    type-1
+                     :context context}
+        log-event-2 {:level   :info
+                     :type    type-2
+                     :context context}
+        log-event-3 {:level   :info
+                     :type    type-3
+                     :context context}
+
+        passing-report (reports/report-on
+                         (logged? logger #{:only}
+                           log-event-1
+                           log-event-2
+                           log-event-3))
+        failing-report (reports/report-on
+                         (logged? logger #{:only}
+                           log-event-1
+                           log-event-3))
+
+        failing-match-result (get-in failing-report [:actual :match-result])]
+    (is (= :pass (:type passing-report)))
+    (is (= :fail (:type failing-report)))
+    (is (= :mismatch (:matcher-combinators.result/type failing-match-result)))
+    (is (= [{:context context
+             :level   :info
+             :meta    {:column 1
+                       :line   1
+                       :ns     (find-ns 'cartus.test-test)}
+             :type    type-1}
+            {:context context
+             :level   :info
+             :meta    {:column 1
+                       :line   2
+                       :ns     (find-ns 'cartus.test-test)}
+             :type    (reports/mismatch {:expected type-3
+                                         :actual type-2})}
+            (reports/unexpected
+              {:context context
+               :level   :info
+               :meta    {:column 1
+                         :line   3
+                         :ns     (find-ns 'cartus.test-test)}
+               :type    type-3})]
+          (:matcher-combinators.result/value failing-match-result)))))

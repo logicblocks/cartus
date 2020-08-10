@@ -39,7 +39,7 @@
      :else
      nil)))
 
-(defn insert [v i e]
+(defn- insert [v i e]
   (vec (concat (take i v) [e] (drop i v))))
 
 (defn match-candidates [elements n]
@@ -51,7 +51,7 @@
            (reduce (fn [c p] (insert c p ::mc/missing)) % ps))
         (comb/combinations elements (- n i))))))
 
-(defn match-candidate-result [match-candidate matchers]
+(defn- match-candidate-result [match-candidate matchers]
   (reduce
     (fn [{::mc-result/keys [type value elements matched weight]}
          [matcher element]]
@@ -79,7 +79,7 @@
                  :weight   0}
     (map vector matchers match-candidate)))
 
-(defn format-mismatch [result elements]
+(defn- format-mismatch [result elements]
   (let [{:keys [value remaining]}
         (reduce
           (fn [{:keys [remaining value]} element]
@@ -116,7 +116,7 @@
     (and (>= candidate-matched best-matched)
       (< candidate-weight best-weight))))
 
-(defn match-subsequence [matchers elements]
+(defn- match-subsequence [matchers elements]
   (let [result
         (reduce
           (fn [best candidate]

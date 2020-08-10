@@ -2,7 +2,11 @@
   (:require
    [clojure.test :as test]
 
-   [matcher-combinators.model :as mc-model]))
+   [matcher-combinators.model :as mc-model]
+
+   [cartus.test.matchers :as cartus-matchers]))
+
+;;; Report hijacking
 
 ;; It should be enough to rebind clojure.test/report to capture reports.
 ;; However, it appears Cursive redefs clojure.test/do-report (a level above the
@@ -13,13 +17,16 @@
 (def do-report test/do-report)
 
 (defmacro report-on [form]
-  `(let [reports# (atom nil)]
+  `(let [report# (atom nil)]
      (with-redefs [test/do-report do-report]
-       (binding [test/report (fn [m#] (swap! reports# conj m#))]
+       (binding [test/report (fn [m#] (reset! report# m#))]
          (test/is ~form)))
-     #_(clojure.pprint/pprint (deref reports#))
-     #_(println (deref reports#))
-     (first (deref reports#))))
+     (deref report#)))
+
+;;; Report helpers
+
+(defn ignored [actual]
+  (cartus-matchers/map->Ignored {:actual actual}))
 
 (defn missing [expected]
   (mc-model/map->Missing {:expected expected}))
@@ -28,3 +35,6 @@
   (mc-model/map->Mismatch
     {:expected expected
      :actual   actual}))
+
+(defn unexpected [actual]
+  (mc-model/map->Unexpected {:actual actual}))
