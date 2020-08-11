@@ -23,6 +23,26 @@ number of benefits:
 * Since the logger is passed as an explicit dependency, it can be transformed
   in various ways, such as by adding context to all log events or filtering log 
   events to only those of a certain set of types within a particular scope.
+  
+## Contents
+
+- [Installation](#installation)
+- [Configuring a backend](#configuring-a-backend)
+    - [The `cartus.test/logger` backend](#test-backend)
+    - [The `cartus.cambium/logger` backend](#cambium-backend)
+    - [The `cartus.null/logger` backend](#null-backend)
+    - [Custom backends](#custom-backends)
+- [Logging events](#logging-events)
+- [Applying transformations to loggers](#applying-transformations-to-loggers)
+    - [Setting logger context](#setting-logger-context)
+    - [Filtering by log levels](#filtering-by-log-levels)
+    - [Filtering by log types](#filtering-by-log-types)
+    - [Applying arbitrary transformations](#applying-arbitrary-transformations)
+- [Testing for log events](#testing-for-log-events)
+    - [Asserting directly against logged events](#asserting-directly-against-logged-events)
+    - [Using the `logged?` assertion](#logged?-assertion)
+    - [Using modifiers with `logged?`](#using-modifiers)
+    - [Advanced usage of `logged?`](#advanced-usage)
 
 ## Installation
 
@@ -34,7 +54,7 @@ Add the following to your `project.clj` file:
 
 ## Configuring a backend
 
-### The `cartus.test/logger` backend
+### <a name="test-backend"></a>The `cartus.test/logger` backend
 
 The [[cartus.test/logger]] backend captures all logged events in memory in an
 atom, allowing your tests to assert that log events took place.
@@ -54,7 +74,7 @@ To create a `cartus.test/logger`:
 (def logger (cartus.test/logger))
 ```
 
-### The `cartus.cambium/logger` backend
+### <a name="cambium-backend"></a>The `cartus.cambium/logger` backend
 
 The [[cartus.cambium/logger]] backend passes all logged events to `cambium`
 which in turn uses [`SLF4J`](http://www.slf4j.org/) and 
@@ -145,7 +165,7 @@ Once `cambium` is initialised, to create a `cartus.cambium/logger`:
 (def logger (cartus.cambium/logger))
 ```
 
-### The `cartus.null/logger` backend
+### <a name="null-backend"></a>The `cartus.null/logger` backend
 
 The [[cartus.null/logger]] backend ignores all logged events which can be 
 useful to turn off logging completely or provide a default implementation in
@@ -739,8 +759,11 @@ the covers and can be used as examples when implementing your own.
 
 ## Testing for log events
 
-With the help of the [[cartus.test/logger]] and [[cartus.test/events]], you can 
-assert that log events occurred from your tests:
+With the help of the [[cartus.test/logger]] and utilities in the 
+[[cartus.test]], namespace you can assert that log events occurred from within
+your tests.
+
+### Asserting directly against logged events
 
 ```clojure
 (ns example.subject
@@ -753,13 +776,15 @@ assert that log events occurred from your tests:
 
 (ns example.subject-test
   (:require
+   [clojure.test :refer :all]
+
    [cartus.test :as log-test]
    
    [example.subject :as subject]))
 
 (deftest logs-while-summing
-  (let [logger (cartus.test/logger)]
-    (is (= 6 (subject/+-with-logging logger 1 2 3)))
+  (let [logger (log-test/logger)]
+    (subject/+-with-logging logger 1 2 3)
     (is (= [{:level   :info
              :type    :example.subject/summing.values
              :context {:values [1 2 3]}
@@ -767,4 +792,217 @@ assert that log events occurred from your tests:
                        :line 6
                        :column 3}}]
       (log-test/events logger)))))
+; => passes
 ``` 
+
+### <a name="logged?-assertion"></a>Using the `logged?` assertion
+
+Asserting directly against log events returned by [[cartus.test/events]] can be 
+cumbersome. To make log assertions more intentional, use the 
+[[cartus.test/logged?]] assertion, which implements the 
+`clojure.test/assert-expr` multimethod, extending `clojure.test/is` to respond
+to a `logged?` form:
+
+```clojure
+(deftest logs-while-summing
+  (let [logger (cartus.test/logger)]
+    (subject/+-with-logging logger 1 2 3)
+    (is (logged? logger 
+          {:level   :info
+           :type    :example.subject/summing.values
+           :context {:values [1 2 3]}
+           :meta    {:ns (find-ns 'example.subject)
+                     :line 6
+                     :column 3}}))))
+; => passes
+```
+
+### <a name="using-modifiers"></a>Using modifiers with `logged?`
+
+By default, `logged?` matches fuzzily against the events logged to the logger.
+As a result, log specs don't need to include all attributes and can instead 
+include a subset:
+
+```clojure
+(deftest logs-while-summing
+  (let [logger (cartus.test/logger)]
+    (subject/+-with-logging logger 1 2 3)
+    (is (logged? logger 
+          {:level   :info
+           :type    :example.subject/summing.values
+           :context {:values [1 2 3]}}))))
+; => passes
+```
+
+This is useful when the metadata of the logged event is unimportant or where
+you don't care about some part of the logged event, say, the level at which the
+event was logged.
+
+If instead you want to match strictly against the events logged to the logger,
+pass the `:strict-contents` modifier:
+
+```clojure
+(deftest logs-while-summing
+  (let [logger (cartus.test/logger)]
+    (subject/+-with-logging logger 1 2 3)
+    (is (logged? logger #{:strict-contents}
+          {:level   :info
+           :type    :example.subject/summing.values
+           :context {:values [1 2 3]}}))))
+; => fails, due to missing `:meta` attribute
+```
+
+The `logged?` assertion accepts a variable number of log specs, to assert 
+against a sequence of log events. By default, `logged?` expects the order of
+log events to match the log specs but allows surplus log events in the log 
+stream and allows log events to occur between those events specified by the 
+provided log specs. As such, it is enough for matching log events to appear
+in the correct order somewhere in the log stream:
+
+```clojure
+(deftest logs-while-summing
+  (let [logger (cartus.test/logger)]
+    
+    (subject/+-with-logging logger 1 2 3)
+    (subject/+-with-logging logger 4 5 6)
+    (subject/+-with-logging logger 7 8 9)
+    (subject/+-with-logging logger 10 11 12)
+    (subject/+-with-logging logger 13 14 15)
+
+    (is (logged? logger 
+          {:type    :example.subject/summing.values
+           :context {:values [4 5 6]}}
+          {:type    :example.subject/summing.values
+           :context {:values [10 11 12]}}))))
+; => passes
+```
+
+If instead, you want to assert that a set of log events occur, but the order is
+not important, pass the `:in-any-order` modifier:
+
+```clojure
+(deftest logs-while-summing
+  (let [logger (cartus.test/logger)]
+    
+    (subject/+-with-logging logger 1 2 3)
+    (subject/+-with-logging logger 4 5 6)
+    (subject/+-with-logging logger 7 8 9)
+    (subject/+-with-logging logger 10 11 12)
+    (subject/+-with-logging logger 13 14 15)
+
+    (is (logged? logger #{:in-any-order} 
+          {:type    :example.subject/summing.values
+           :context {:values [10 11 12]}}
+          {:type    :example.subject/summing.values
+           :context {:values [4 5 6]}}))))
+; => passes
+```
+
+This can be useful when concurrent processes are logging to the same logger
+since event ordering in such a case is not guaranteed.
+
+Sometimes, you might want to assert that a strict sequence of log events has
+occurred and don't want to tolerate surplus log events. To assert that only
+the specified log events have occurred, use the `:only` modifier:
+
+```clojure
+(deftest logs-while-summing
+  (let [logger (cartus.test/logger)]
+    
+    (subject/+-with-logging logger 1 2 3)
+    (subject/+-with-logging logger 4 5 6)
+    (subject/+-with-logging logger 7 8 9)
+    (subject/+-with-logging logger 10 11 12)
+    (subject/+-with-logging logger 13 14 15)
+
+    (is (logged? logger #{:only} 
+          {:type    :example.subject/summing.values
+           :context {:values [4 5 6]}}
+          {:type    :example.subject/summing.values
+           :context {:values [10 11 12]}}))))
+; => fails, since there are many surplus log events
+```
+
+Again, the default behaviour is that log events are expected in the order in
+which they are specified. If instead you want to assert that only the specified
+log events have occurred but where order is not important, use both the `:only`
+and `:in-any-order` modifiers:
+
+```clojure
+(deftest logs-while-summing
+  (let [logger (cartus.test/logger)]
+    
+    (subject/+-with-logging logger 1 2 3)
+    (subject/+-with-logging logger 4 5 6)
+    
+    (is (logged? logger #{:only :in-any-order} 
+          {:type    :example.subject/summing.values
+           :context {:values [4 5 6]}}
+          {:type    :example.subject/summing.values
+           :context {:values [1 2 3]}}))))
+; => passes
+```
+
+The available modifiers are:
+
+  - `#{:in-order :in-any-order}` defining ordering constraints
+  - `#{:only :at-least}` defining cardinality constraints
+  - `#{:fuzzy-contents :strict-contents}` defining content constraints
+  
+and any combination of one from each set is permitted. The effective default
+modifiers are: `#{:in-order :at-least :fuzzy-contents}`.
+
+### <a name="advanced-usage"></a>Advanced usage of `logged?`
+
+Internally, the `logged?` assertion uses the 
+[`matcher-combinators`](https://github.com/nubank/matcher-combinators) library
+which allows for more advanced matching. Specifically, `matcher-combinators`
+supports predicate matchers as well as more targetted collection matching.
+
+For example, to ensure that a log event occurs with one of a number of types,
+you can do the following:
+
+```clojure
+(is (logged? logger
+      {:level :info
+       :type #(or (= :some.ns/type-1 %) (= :some.ns/type-2 %))}))
+``` 
+
+This will assert that at least a log event with a type of `:some.ns/type-1` or
+`:some.ns/type-2` occurs at log level `:info`.
+
+Predicates can occur deep inside a nested log spec, for example:
+
+```clojure
+(is (logged? logger
+      {:level :info
+       :type  :some.ns/type-1
+       :context {:factors [#(> % 3) #(> % 5) 8]}}))
+``` 
+
+In addition to predicate matchers, `matcher-combinators` allows you to more
+tightly or loosely control the make up of collection types. By default, maps
+are matched using a matcher called `embeds` which allows surplus attributes
+to be present. If you wish to exactly match a map in the log event context,
+whilst retaining fuzzy matching on the log event overall you can do the 
+following:
+
+```clojure
+(require '[matcher-combinators.matchers :as mc-matchers])
+
+(is (logged? logger
+      {:level :info
+       :type  :some.ns/type-1
+       :context {:reference 
+                 (mc-matchers/equals 
+                   {:id "123"
+                    :region "us"
+                    :account-id "456"})}}))
+``` 
+
+Internally, the `logged?` modifiers are implemented as combinations of different
+`matcher-combinator` matchers, allowing for more flexible log specs than 
+provided by the modifiers alone.
+
+For more details on how to compose more complex matchers, see the
+[`matcher-combinator` documentation](https://cljdoc.org/d/nubank/matcher-combinators).

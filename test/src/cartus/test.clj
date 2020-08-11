@@ -38,13 +38,14 @@
 
 (declare
   ^{:doc
-    "Asserts that the logger received the log events.
+    "Asserts that the logger received log events matching the provided log
+    specs.
 
-    Takes either a logger and a variable number of log events or a logger,
-    a set of modifiers and a variable number of log events:
+    Takes either a logger and a variable number of log specs or a logger,
+    a set of modifiers and a variable number of log specs:
 
       - `logger` must be a [[cartus.test/logger]]
-      - `modifiers` can be combinations of:
+      - `modifiers` must be a set, optionally containing one of each of:
         - `#{:in-order :in-any-order}` to specify ordering constraints, defaults
           to `:in-order`
         - `#{:only :at-least}` to specify whether the provided logs must exactly
@@ -54,12 +55,12 @@
           should be matched fuzzily, i.e., surplus keys can be present in the
           log event map, or strictly, i.e., the keys and values must match
           exactly, defaults to `:fuzzy-contents`
-      - each log event is a partial or full map of the log event as returned
+      - each log spec is a partial or full map of the log event as returned
         by [[events]].
 
     Internally, `logged?` uses the `matcher-combinators` library meaning more
-    complex log event specifications can be provided, including using
-    predicates to match parts of the log events. See the
+    complex log specs can be provided, including using predicates to match parts
+    of the log events. See the
     [Getting Started](https://logicblocks.github.io/cartus/getting-started.html)
     guide for more details.
 
@@ -88,8 +89,8 @@
                  :column 1}}))
     ```"
     :arglists
-    '([logger & log-events]
-      [logger modifiers & log-events])}
+    '([logger & log-specs]
+      [logger modifiers & log-specs])}
   logged?)
 
 (defmethod test/assert-expr 'logged? [msg form]
