@@ -1,4 +1,4 @@
-(defproject io.logicblocks/cartus.null "0.1.14-RC2"
+(defproject io.logicblocks/cartus.null "0.1.14-RC3"
   :description "A null backend for cartus."
 
   :plugins  [[lein-modules "0.3.11"]]
