@@ -197,7 +197,7 @@
                         (mc-matchers/match-with overrides# matcher#)
                         matcher#)
 
-             result# (mc-core/match matcher# (cartus-test/events logger#))
+             result# (mc-core/match matcher# (events logger#))
              match?# (mc-core/indicates-match? result#)]
          (test/do-report
            (if match?#
