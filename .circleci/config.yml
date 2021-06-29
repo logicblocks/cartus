@@ -23,6 +23,7 @@ jobs:
     steps:
       - checkout
       - run: ./scripts/ci/common/install-openjdk.sh
+      - run: ./scripts/ci/common/upgrade-gpg.sh
       - run: ./scripts/ci/common/install-git-crypt.sh
       - run: ./scripts/ci/common/install-gpg-key.sh
       - run: ./scripts/ci/common/configure-git.sh
@@ -35,6 +36,7 @@ jobs:
     steps:
       - checkout
       - run: ./scripts/ci/common/install-openjdk.sh
+      - run: ./scripts/ci/common/upgrade-gpg.sh
       - run: ./scripts/ci/common/install-git-crypt.sh
       - run: ./scripts/ci/common/install-gpg-key.sh
       - run: ./scripts/ci/common/configure-git.sh
