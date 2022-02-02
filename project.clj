@@ -48,21 +48,21 @@
               [~(str (System/getProperty "user.dir") "/config/linter.clj")]}}
 
    :versions
-   {org.clojure/clojure            "1.10.1"
-    org.clojure/tools.trace        "0.7.10"
+   {org.clojure/clojure            "1.10.3"
+    org.clojure/tools.trace        "0.7.11"
 
-    cambium/cambium.core           "0.9.3"
-    cambium/cambium.codec-cheshire "0.9.3"
-    cambium/cambium.logback.core   "0.4.3"
-    cambium/cambium.logback.json   "0.4.3"
+    cambium/cambium.core           "1.1.1"
+    cambium/cambium.codec-cheshire "1.0.0"
+    cambium/cambium.logback.core   "0.4.5"
+    cambium/cambium.logback.json   "0.4.5"
 
-    org.slf4j                      "1.7.30"
-    ch.qos.logback                 "1.2.3"
+    org.slf4j                      "1.7.35"
+    ch.qos.logback                 "1.2.10"
 
-    nrepl                          "0.7.0"
+    nrepl                          "0.9.0"
 
     eftest                         "0.5.9"
-    tortue/spy                     "2.0.0"
+    tortue/spy                     "2.9.0"
 
     nubank/matcher-combinators     "3.1.1"
 
