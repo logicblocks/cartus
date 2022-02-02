@@ -1,4 +1,4 @@
-(defproject io.logicblocks/cartus.test "0.1.16"
+(defproject io.logicblocks/cartus.test "0.1.17-RC1"
   :description "A test backend for cartus."
 
   :plugins  [[lein-modules "0.3.11"]]
