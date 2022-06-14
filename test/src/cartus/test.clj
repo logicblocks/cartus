@@ -36,43 +36,46 @@
   [test-logger]
   @(:events test-logger))
 
-(defn was-logged?
-  "Returns true if the given event was logged"
-  [logger modifiers & log-specs]
-  (let [resolved-log-specs
-        (if (map? modifiers)
-          (vec (cons modifiers log-specs))
-          log-specs)
+(defmacro create-outcome [logger modifiers log-specs]
+  `(let [resolved-log-specs#
+         (if (map? ~modifiers)
+           (vec (cons ~modifiers ~log-specs))
+           ~log-specs)
 
-        resolved-modifiers
-        (if (set? modifiers)
-          modifiers
-          #{})]
-    (let [overrides {}
-          overrides (if (:strict-contents resolved-modifiers)
-                       (merge overrides {map? mc-matchers/equals})
-                       overrides)
+         resolved-modifiers#
+         (if (set? ~modifiers)
+           ~modifiers
+           #{})
+         overrides# {}
+         overrides# (if (:strict-contents resolved-modifiers#)
+                      (merge overrides# {map? mc-matchers/equals})
+                      overrides#)
 
-          matcher (cond
-                     (sets/subset?
-                       #{:only :in-any-order} resolved-modifiers)
-                     (mc-matchers/in-any-order resolved-log-specs)
+         matcher# (cond
+                    (sets/subset?
+                      #{:only :in-any-order} resolved-modifiers#)
+                    (mc-matchers/in-any-order resolved-log-specs#)
 
-                     (:only resolved-modifiers)
-                     (mc-matchers/equals resolved-log-specs)
+                    (:only resolved-modifiers#)
+                    (mc-matchers/equals resolved-log-specs#)
 
-                     (:in-any-order resolved-modifiers)
-                     (mc-matchers/embeds resolved-log-specs)
+                    (:in-any-order resolved-modifiers#)
+                    (mc-matchers/embeds resolved-log-specs#)
 
-                     :else
-                     (cartus-matchers/subsequences resolved-log-specs))
-          matcher (if (not-empty overrides)
-                     (mc-matchers/match-with overrides matcher)
-                     matcher)
+                    :else
+                    (cartus-matchers/subsequences resolved-log-specs#))
+         matcher# (if (not-empty overrides#)
+                    (mc-matchers/match-with overrides# matcher#)
+                    matcher#)
 
-          result (mc-core/match matcher (events logger))
-          match? (mc-core/indicates-match? result)]
-      match?)))
+         result# (mc-core/match matcher# (events ~logger))
+         match?# (mc-core/indicates-match? result#)]
+     {:result result#
+      :match? match?#}))
+
+(defn was-logged? [logger modifiers & log-specs]
+  (let [{:keys [match?]} (create-outcome logger modifiers log-specs)]
+    match?))
 
 (declare
   ^{:doc
@@ -132,122 +135,99 @@
   logged?)
 
 (defmethod test/assert-expr 'logged? [msg form]
-  `(let [valid-modifiers?#
-         (fn [modifiers#]
-           (not
-             (or
-               (sets/subset? #{:fuzzy-contents :strict-contents} modifiers#)
-               (sets/subset? #{:only :at-least} modifiers#)
-               (sets/subset? #{:in-order :in-any-order} modifiers#))))
+    `(let [valid-modifiers?#
+           (fn [modifiers#]
+             (not
+               (or
+                 (sets/subset? #{:fuzzy-contents :strict-contents} modifiers#)
+                 (sets/subset? #{:only :at-least} modifiers#)
+                 (sets/subset? #{:in-order :in-any-order} modifiers#))))
 
-         call-expectation#
-         (symbol
-           (str
-             "logged? to be called with a test logger, an optional set "
-             "of modifiers and at least one log event spec"))
+           call-expectation#
+           (symbol
+             (str
+               "logged? to be called with a test logger, an optional set "
+               "of modifiers and at least one log event spec"))
 
-         args# (list ~@(rest form))
-         arg-count# (count args#)
+           args# (list ~@(rest form))
+           arg-count# (count args#)
 
-         [logger# modifiers# & log-specs#] args#
+           [logger# modifiers# & log-specs#] args#
 
-         resolved-log-specs#
-         (if (map? modifiers#)
-           (vec (cons modifiers# log-specs#))
-           log-specs#)
+           resolved-log-specs#
+           (if (map? modifiers#)
+             (vec (cons modifiers# log-specs#))
+             log-specs#)
 
-         resolved-modifiers#
-         (if (set? modifiers#)
-           modifiers#
-           #{})]
-     (cond
-       (= arg-count# 1)
-       (test/do-report
-         {:type     :fail
-          :message  ~msg
-          :expected call-expectation#
-          :actual   (symbol
-                      (str "only " arg-count# " argument was provided: "
-                        '~form))})
-
-       (empty? resolved-log-specs#)
-       (test/do-report
-         {:type     :fail
-          :message  ~msg
-          :expected call-expectation#
-          :actual   (symbol
-                      (str "no log specs were provided: " '~form))})
-
-       (not (or (map? modifiers#) (set? modifiers#)))
-       (test/do-report
-         {:type     :fail
-          :message  ~msg
-          :expected call-expectation#
-          :actual   (symbol
-                      (str "non-set modifiers provided: " '~form))})
-
-       (not (instance? TestLogger logger#))
-       (test/do-report
-         {:type     :fail
-          :message  ~msg
-          :expected call-expectation#
-          :actual   (symbol
-                      (str "instance other than test logger provided: "
-                        '~form))})
-
-       (not (mc-core/matcher? resolved-log-specs#))
-       (test/do-report
-         {:type     :fail
-          :message  ~msg
-          :expected call-expectation#
-          :actual   (symbol
-                      (str "non-matcher log specs provided: " '~form))})
-
-       (not (valid-modifiers?# resolved-modifiers#))
-       (test/do-report
-         {:type     :fail
-          :message  ~msg
-          :expected call-expectation#
-          :actual   (symbol
-                      (str "invalid combination of modifiers provided: "
-                        '~form))})
-
-       :else
-       (let [overrides# {}
-             overrides# (if (:strict-contents resolved-modifiers#)
-                          (merge overrides# {map? mc-matchers/equals})
-                          overrides#)
-
-             matcher# (cond
-                        (sets/subset?
-                          #{:only :in-any-order} resolved-modifiers#)
-                        (mc-matchers/in-any-order resolved-log-specs#)
-
-                        (:only resolved-modifiers#)
-                        (mc-matchers/equals resolved-log-specs#)
-
-                        (:in-any-order resolved-modifiers#)
-                        (mc-matchers/embeds resolved-log-specs#)
-
-                        :else
-                        (cartus-matchers/subsequences resolved-log-specs#))
-             matcher# (if (not-empty overrides#)
-                        (mc-matchers/match-with overrides# matcher#)
-                        matcher#)
-
-             result# (mc-core/match matcher# (events logger#))
-             match?# (mc-core/indicates-match? result#)]
+           resolved-modifiers#
+           (if (set? modifiers#)
+             modifiers#
+             #{})]
+       (cond
+         (= arg-count# 1)
          (test/do-report
-           (if match?#
-             {:type     :pass
-              :message  ~msg
-              :expected '~form
-              :actual   `('logged? ~logger# ~modifiers# ~@log-specs#)}
-             {:type     :fail
-              :message  ~msg
-              :expected '~form
-              :actual   (mc-test/tagged-for-pretty-printing
-                          (list '~'not
-                            `('logged? ~logger# ~modifiers# ~@log-specs#))
-                          result#)}))
-         match?#))))
+           {:type     :fail
+            :message  ~msg
+            :expected call-expectation#
+            :actual   (symbol
+                        (str "only " arg-count# " argument was provided: "
+                          '~form))})
+
+         (empty? resolved-log-specs#)
+         (test/do-report
+           {:type     :fail
+            :message  ~msg
+            :expected call-expectation#
+            :actual   (symbol
+                        (str "no log specs were provided: " '~form))})
+
+         (not (or (map? modifiers#) (set? modifiers#)))
+         (test/do-report
+           {:type     :fail
+            :message  ~msg
+            :expected call-expectation#
+            :actual   (symbol
+                        (str "non-set modifiers provided: " '~form))})
+
+         (not (instance? TestLogger logger#))
+         (test/do-report
+           {:type     :fail
+            :message  ~msg
+            :expected call-expectation#
+            :actual   (symbol
+                        (str "instance other than test logger provided: "
+                          '~form))})
+
+         (not (mc-core/matcher? resolved-log-specs#))
+         (test/do-report
+           {:type     :fail
+            :message  ~msg
+            :expected call-expectation#
+            :actual   (symbol
+                        (str "non-matcher log specs provided: " '~form))})
+
+         (not (valid-modifiers?# resolved-modifiers#))
+         (test/do-report
+           {:type     :fail
+            :message  ~msg
+            :expected call-expectation#
+            :actual   (symbol
+                        (str "invalid combination of modifiers provided: "
+                          '~form))})
+
+         :else
+         (let [result# (create-outcome logger# modifiers# log-specs#)]
+           (test/do-report
+             (if (:match? result#)
+               {:type     :pass
+                :message  ~msg
+                :expected '~form
+                :actual   `('logged? ~logger# ~modifiers# ~@log-specs#)}
+               {:type     :fail
+                :message  ~msg
+                :expected '~form
+                :actual   (mc-test/tagged-for-pretty-printing
+                            (list '~'not
+                              `('logged? ~logger# ~modifiers# ~@log-specs#))
+                            (:result result#))}))
+           (:match? result#)))))
