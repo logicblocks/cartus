@@ -93,7 +93,6 @@
         was-logged (cartus-test/was-logged? logger #{} log-event)]
     (is (true? was-logged))))
 
-
 (deftest logged?-matches-single-log-event-exactly
   (let [logger (cartus-test/logger)
         type ::some.event
