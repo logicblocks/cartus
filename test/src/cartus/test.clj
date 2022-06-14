@@ -37,33 +37,24 @@
   @(:events test-logger))
 
 (defmacro create-outcome [logger modifiers log-specs]
-  `(let [resolved-log-specs#
-         (if (map? ~modifiers)
-           (vec (cons ~modifiers ~log-specs))
-           ~log-specs)
-
-         resolved-modifiers#
-         (if (set? ~modifiers)
-           ~modifiers
-           #{})
-         overrides# {}
-         overrides# (if (:strict-contents resolved-modifiers#)
+  `(let [overrides# {}
+         overrides# (if (:strict-contents ~modifiers)
                       (merge overrides# {map? mc-matchers/equals})
                       overrides#)
 
          matcher# (cond
                     (sets/subset?
-                      #{:only :in-any-order} resolved-modifiers#)
-                    (mc-matchers/in-any-order resolved-log-specs#)
+                      #{:only :in-any-order} ~modifiers)
+                    (mc-matchers/in-any-order ~log-specs)
 
-                    (:only resolved-modifiers#)
-                    (mc-matchers/equals resolved-log-specs#)
+                    (:only ~modifiers)
+                    (mc-matchers/equals ~log-specs)
 
-                    (:in-any-order resolved-modifiers#)
-                    (mc-matchers/embeds resolved-log-specs#)
+                    (:in-any-order ~modifiers)
+                    (mc-matchers/embeds ~log-specs)
 
                     :else
-                    (cartus-matchers/subsequences resolved-log-specs#))
+                    (cartus-matchers/subsequences ~log-specs))
          matcher# (if (not-empty overrides#)
                     (mc-matchers/match-with overrides# matcher#)
                     matcher#)
@@ -216,7 +207,8 @@
                           '~form))})
 
          :else
-         (let [result# (create-outcome logger# modifiers# log-specs#)]
+         (let [result# (create-outcome
+                         logger# resolved-modifiers# resolved-log-specs#)]
            (test/do-report
              (if (:match? result#)
                {:type     :pass
