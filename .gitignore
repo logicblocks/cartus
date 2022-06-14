@@ -21,3 +21,4 @@ pom.xml.asc
 .DS_Store
 /vendor
 .eastwood
+/.idea
