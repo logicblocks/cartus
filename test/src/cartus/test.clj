@@ -36,33 +36,33 @@
   [test-logger]
   @(:events test-logger))
 
-(defmacro create-outcome [logger modifiers log-specs]
-  `(let [overrides# {}
-         overrides# (if (:strict-contents ~modifiers)
-                      (merge overrides# {map? mc-matchers/equals})
-                      overrides#)
+(defn create-outcome [logger modifiers log-specs]
+  (let [overrides {}
+        overrides (if (:strict-contents modifiers)
+                    (merge overrides {map? mc-matchers/equals})
+                    overrides)
 
-         matcher# (cond
-                    (sets/subset?
-                      #{:only :in-any-order} ~modifiers)
-                    (mc-matchers/in-any-order ~log-specs)
+        matcher (cond
+                  (sets/subset?
+                    #{:only :in-any-order} modifiers)
+                  (mc-matchers/in-any-order log-specs)
 
-                    (:only ~modifiers)
-                    (mc-matchers/equals ~log-specs)
+                  (:only modifiers)
+                  (mc-matchers/equals log-specs)
 
-                    (:in-any-order ~modifiers)
-                    (mc-matchers/embeds ~log-specs)
+                  (:in-any-order modifiers)
+                  (mc-matchers/embeds log-specs)
 
-                    :else
-                    (cartus-matchers/subsequences ~log-specs))
-         matcher# (if (not-empty overrides#)
-                    (mc-matchers/match-with overrides# matcher#)
-                    matcher#)
+                  :else
+                  (cartus-matchers/subsequences log-specs))
+        matcher (if (not-empty overrides)
+                  (mc-matchers/match-with overrides matcher)
+                  matcher)
 
-         result# (mc-core/match matcher# (events ~logger))
-         match?# (mc-core/indicates-match? result#)]
-     {:result result#
-      :match? match?#}))
+        result (mc-core/match matcher (events logger))
+        match? (mc-core/indicates-match? result)]
+    {:result result
+     :match? match?}))
 
 (defn was-logged? [logger modifiers & log-specs]
   (let [{:keys [match?]} (create-outcome logger modifiers log-specs)]
