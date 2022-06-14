@@ -36,6 +36,44 @@
   [test-logger]
   @(:events test-logger))
 
+(defn was-logged?
+  "Returns true if the given event was logged"
+  [logger modifiers & log-specs]
+  (let [resolved-log-specs
+        (if (map? modifiers)
+          (vec (cons modifiers log-specs))
+          log-specs)
+
+        resolved-modifiers
+        (if (set? modifiers)
+          modifiers
+          #{})]
+    (let [overrides {}
+          overrides (if (:strict-contents resolved-modifiers)
+                       (merge overrides {map? mc-matchers/equals})
+                       overrides)
+
+          matcher (cond
+                     (sets/subset?
+                       #{:only :in-any-order} resolved-modifiers)
+                     (mc-matchers/in-any-order resolved-log-specs)
+
+                     (:only resolved-modifiers)
+                     (mc-matchers/equals resolved-log-specs)
+
+                     (:in-any-order resolved-modifiers)
+                     (mc-matchers/embeds resolved-log-specs)
+
+                     :else
+                     (cartus-matchers/subsequences resolved-log-specs))
+          matcher (if (not-empty overrides)
+                     (mc-matchers/match-with overrides matcher)
+                     matcher)
+
+          result (mc-core/match matcher (events logger))
+          match? (mc-core/indicates-match? result)]
+      match?)))
+
 (declare
   ^{:doc
     "Asserts that the logger received log events matching the provided log
