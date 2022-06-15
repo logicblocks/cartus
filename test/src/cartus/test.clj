@@ -64,7 +64,26 @@
     {:result result
      :match? match?}))
 
-(defn was-logged? [logger modifiers & log-specs]
+(defn was-logged?
+  "Returns true if the given log-specs were logged.
+
+  Takes a logger, a set of modifiers and a variable number of log specs:
+
+  - `logger` must be a [[cartus.test/logger]]
+  - `modifiers` must be a set, optionally containing one of each of:
+    - `#{:in-order :in-any-order}` to specify ordering constraints, defaults
+      to `:in-order`
+    - `#{:only :at-least}` to specify whether the provided logs must exactly
+      match the log events logged to the logger or whether they represent
+      a subset, defaults to `:at-least`
+    - `#{:fuzzy-contents :strict-contents}` to specify whether log events
+      should be matched fuzzily, i.e., surplus keys can be present in the
+      log event map, or strictly, i.e., the keys and values must match
+      exactly, defaults to `:fuzzy-contents`
+  - each log spec is a partial or full map of the log event as returned
+    by [[events]].
+  "
+  [logger modifiers & log-specs]
   (let [{:keys [match?]} (create-outcome logger modifiers log-specs)]
     match?))
 
