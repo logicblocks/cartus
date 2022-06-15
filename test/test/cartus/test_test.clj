@@ -59,6 +59,40 @@
                             :ns (find-ns 'cartus.test-support.definitions))}]
             (cartus-test/events logger))))))
 
+(deftest was-logged?-does-not-find-missing-match
+  (let [logger (cartus-test/logger)
+        type ::some.event
+        context {:some "context"}
+
+        _ ^{:line 1 :column 1} (cartus-core/info logger type context)
+
+        log-event {:level   :info
+                   :type    ::OTHER.event
+                   :context context
+                   :meta    {:ns     (find-ns 'cartus.test-test)
+                             :line   1
+                             :column 1}}
+
+        was-logged (cartus-test/was-logged? logger #{} log-event)]
+    (is (false? was-logged))))
+
+(deftest was-logged?-finds-match
+  (let [logger (cartus-test/logger)
+        type ::some.event
+        context {:some "context"}
+
+        _ ^{:line 1 :column 1} (cartus-core/info logger type context)
+
+        log-event {:level   :info
+                   :type    type
+                   :context context
+                   :meta    {:ns     (find-ns 'cartus.test-test)
+                             :line   1
+                             :column 1}}
+
+        was-logged (cartus-test/was-logged? logger #{} log-event)]
+    (is (true? was-logged))))
+
 (deftest logged?-matches-single-log-event-exactly
   (let [logger (cartus-test/logger)
         type ::some.event

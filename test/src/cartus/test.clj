@@ -36,6 +36,38 @@
   [test-logger]
   @(:events test-logger))
 
+(defn create-outcome [logger modifiers log-specs]
+  (let [overrides {}
+        overrides (if (:strict-contents modifiers)
+                    (merge overrides {map? mc-matchers/equals})
+                    overrides)
+
+        matcher (cond
+                  (sets/subset?
+                    #{:only :in-any-order} modifiers)
+                  (mc-matchers/in-any-order log-specs)
+
+                  (:only modifiers)
+                  (mc-matchers/equals log-specs)
+
+                  (:in-any-order modifiers)
+                  (mc-matchers/embeds log-specs)
+
+                  :else
+                  (cartus-matchers/subsequences log-specs))
+        matcher (if (not-empty overrides)
+                  (mc-matchers/match-with overrides matcher)
+                  matcher)
+
+        result (mc-core/match matcher (events logger))
+        match? (mc-core/indicates-match? result)]
+    {:result result
+     :match? match?}))
+
+(defn was-logged? [logger modifiers & log-specs]
+  (let [{:keys [match?]} (create-outcome logger modifiers log-specs)]
+    match?))
+
 (declare
   ^{:doc
     "Asserts that the logger received log events matching the provided log
@@ -175,32 +207,10 @@
                         '~form))})
 
        :else
-       (let [overrides# {}
-             overrides# (if (:strict-contents resolved-modifiers#)
-                          (merge overrides# {map? mc-matchers/equals})
-                          overrides#)
-
-             matcher# (cond
-                        (sets/subset?
-                          #{:only :in-any-order} resolved-modifiers#)
-                        (mc-matchers/in-any-order resolved-log-specs#)
-
-                        (:only resolved-modifiers#)
-                        (mc-matchers/equals resolved-log-specs#)
-
-                        (:in-any-order resolved-modifiers#)
-                        (mc-matchers/embeds resolved-log-specs#)
-
-                        :else
-                        (cartus-matchers/subsequences resolved-log-specs#))
-             matcher# (if (not-empty overrides#)
-                        (mc-matchers/match-with overrides# matcher#)
-                        matcher#)
-
-             result# (mc-core/match matcher# (events logger#))
-             match?# (mc-core/indicates-match? result#)]
+       (let [result# (create-outcome
+                       logger# resolved-modifiers# resolved-log-specs#)]
          (test/do-report
-           (if match?#
+           (if (:match? result#)
              {:type     :pass
               :message  ~msg
               :expected '~form
@@ -211,5 +221,5 @@
               :actual   (mc-test/tagged-for-pretty-printing
                           (list '~'not
                             `('logged? ~logger# ~modifiers# ~@log-specs#))
-                          result#)}))
-         match?#))))
+                          (:result result#))}))
+         (:match? result#)))))
