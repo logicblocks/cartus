@@ -148,6 +148,7 @@
      ["vcs" "push"]]}}
 
   :source-paths []
+  :test-paths []
 
   :codox
   {:namespaces  [#"^cartus\."]
