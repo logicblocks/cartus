@@ -1,4 +1,3 @@
-
 # cartus
 
 [![Clojars Project](https://img.shields.io/clojars/v/io.logicblocks/cartus.core.svg)](https://clojars.org/io.logicblocks/cartus.core)
@@ -66,7 +65,7 @@ guide for more details.
 
 ## License
 
-Copyright &copy; 2022 LogicBlocks Maintainers
+Copyright &copy; 2023 LogicBlocks Maintainers
 
 Distributed under the terms of the 
 [MIT License](http://opensource.org/licenses/MIT).
