@@ -21,16 +21,16 @@ Heavily inspired by [JUXT's blog post on logging](https://juxt.pro/blog/logging)
 Add the following to your `project.clj` file:
 
 ```clojure
-[io.logicblocks/cartus.core "0.1.16"]
+[io.logicblocks/cartus.core "0.1.18"]
 ```
 
 Depending on which backends you plan to use, add one or more of the following to
 your `project.clj` file:
 
 ```clojure
-[io.logicblocks/cartus.null "0.1.16"]
-[io.logicblocks/cartus.test "0.1.16"]
-[io.logicblocks/cartus.cambium "0.1.16"]
+[io.logicblocks/cartus.null "0.1.18"]
+[io.logicblocks/cartus.test "0.1.18"]
+[io.logicblocks/cartus.cambium "0.1.18"]
 ```
 
 The [`cambium`](https://cambium-clojure.github.io/) backend requires further

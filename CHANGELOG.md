@@ -8,8 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.1.18] — 2023-06-10
+
 ### Changes
 
 - All dependencies have been upgraded to the latest available versions.
 
-[Unreleased]: https://github.com/logicblocks/cartus/compare/0.1.0...HEAD
+[0.1.18]: https://github.com/logicblocks/cartus/compare/0.1.0...0.1.18
+[Unreleased]: https://github.com/logicblocks/cartus/compare/0.1.18...HEAD
