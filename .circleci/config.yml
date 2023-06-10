@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: ~/source
     docker:
-      - image: ruby:2.7.4
+      - image: ruby:3.1.1
     steps:
       - checkout
       - run: ./scripts/ci/common/install-openjdk.sh
@@ -11,7 +11,7 @@ jobs:
   test:
     working_directory: ~/source
     docker:
-      - image: ruby:2.7.4
+      - image: ruby:3.1.1
     steps:
       - checkout
       - run: ./scripts/ci/common/install-openjdk.sh
@@ -19,7 +19,7 @@ jobs:
   prerelease:
     working_directory: ~/source
     docker:
-      - image: ruby:2.7.4
+      - image: ruby:3.1.1
     steps:
       - checkout
       - run: ./scripts/ci/common/install-openjdk.sh
@@ -32,7 +32,7 @@ jobs:
   release:
     working_directory: ~/source
     docker:
-      - image: ruby:2.7.4
+      - image: ruby:3.1.1
     steps:
       - checkout
       - run: ./scripts/ci/common/install-openjdk.sh
