@@ -11,14 +11,14 @@ require 'rake_ssh'
 require 'rubocop/rake_task'
 require 'yaml'
 
-task :default => [
-  :'build:code:fix',
-  :'library:initialise',
-  :'library:check',
-  :'library:test:unit'
+task default: %i[
+  build:code:fix
+  library:initialise
+  library:check
+  library:test:unit
 ]
 
-RubyLeiningen::Commands.define_custom_command("modules") do |config, opts|
+RubyLeiningen::Commands.define_custom_command('modules') do |config, opts|
   config.on_command_builder do |command|
     command = command.with_subcommand(opts[:command].to_s)
     command
@@ -26,7 +26,7 @@ RubyLeiningen::Commands.define_custom_command("modules") do |config, opts|
 end
 
 RakeLeiningen.define_installation_tasks(
-  version: '2.10.0'
+  version: '2.9.1'
 )
 
 RakeGitCrypt.define_standard_tasks(
@@ -149,7 +149,7 @@ end
 
 RakeGithub.define_repository_tasks(
   namespace: :github,
-  repository: 'logicblocks/cartus',
+  repository: 'logicblocks/cartus'
 ) do |t|
   github_config =
     YAML.load_file('config/secrets/github/config.yaml')
@@ -187,9 +187,9 @@ namespace :build do
 end
 
 namespace :library do
-  desc "Initialise all modules in the local maven repository"
-  task :initialise => [:'leiningen:ensure'] do
-    RubyLeiningen.modules(command: "install")
+  desc 'Initialise all modules in the local maven repository'
+  task initialise: [:'leiningen:ensure'] do
+    RubyLeiningen.modules(command: 'install')
   end
 
   RakeLeiningen.define_check_tasks(fix: true)
