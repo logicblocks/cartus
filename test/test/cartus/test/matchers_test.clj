@@ -4,6 +4,7 @@
 
    [matcher-combinators.core :as mc-core]
    [matcher-combinators.model :as mc-model]
+   [matcher-combinators.matchers :as mc-matchers]
    [matcher-combinators.result :as mc-result]
    [matcher-combinators.standalone :as mc-standalone]
    [matcher-combinators.parser]
@@ -224,16 +225,15 @@
           []))))
 
 (deftest subsequences-describes-mismatch-when-predicates-not-satisfied
-  (let [greater-than-3 (fn [x] (< 3 x))]
+  (let [greater-than-3 (mc-matchers/pred (fn [x] (< 3 x)))]
     (is (= {::mc-result/type   :mismatch
-            ::mc-result/value  [(mc-model/->Missing
-                                  (str "predicate: " greater-than-3))
-                                (mc-model/map->Mismatch
-                                  {:actual   1
-                                   :expected (str "predicate: "
-                                               greater-than-3)})
-                                3
-                                (m/->Ignored 2)]
+            ::mc-result/value
+            [(mc-model/->Missing (:desc greater-than-3))
+             (mc-model/map->Mismatch
+               {:actual   1
+                :expected (:desc greater-than-3)})
+             3
+             (m/->Ignored 2)]
             ::mc-result/weight 2}
           (mc-core/match
            (m/subsequences [greater-than-3 greater-than-3 3])

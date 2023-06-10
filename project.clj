@@ -11,15 +11,15 @@
 
    :inherited
    {:url
-             "https://github.com/logicblocks/cartus"
+    "https://github.com/logicblocks/cartus"
 
     :license
-             {:name "The MIT License"
-              :url  "https://opensource.org/licenses/MIT"}
+    {:name "The MIT License"
+     :url  "https://opensource.org/licenses/MIT"}
 
     :deploy-repositories
-             {"releases"  {:url "https://repo.clojars.org" :creds :gpg}
-              "snapshots" {:url "https://repo.clojars.org" :creds :gpg}}
+    {"releases"  {:url "https://repo.clojars.org" :creds :gpg}
+     "snapshots" {:url "https://repo.clojars.org" :creds :gpg}}
 
     :plugins [[lein-cloverage "1.2.4"]
               [lein-shell "0.5.0"]
@@ -32,43 +32,47 @@
               [jonase/eastwood "1.4.0"]]
 
     :cloverage
-             {:ns-exclude-regex [#"^user"]}
+    {:ns-exclude-regex [#"^user"]}
 
     :bikeshed
-             {:name-collisions false
-              :long-lines      false}
+    {:name-collisions false
+     :long-lines      false}
 
     :cljfmt
-             {:indents {#".*"     [[:inner 0]]
-                        defrecord [[:block 1] [:inner 1]]
-                        deftype   [[:block 1] [:inner 1]]}}
+    {:indents {#".*"     [[:inner 0]]
+               defrecord [[:block 1] [:inner 1]]
+               deftype   [[:block 1] [:inner 1]]}}
 
     :eastwood
-             {:config-files
-              [~(str (System/getProperty "user.dir") "/config/linter.clj")]}}
+    {:config-files
+     [~(str (System/getProperty "user.dir") "/config/linter.clj")]}}
 
    :versions
-   {org.clojure/clojure            "1.10.3"
-    org.clojure/tools.trace        "0.7.11"
+   {org.clojure/clojure              "1.11.1"
+    org.clojure/tools.trace          "0.7.11"
+    org.clojure/tools.logging        "1.2.4"
 
-    cambium/cambium.core           "1.1.1"
-    cambium/cambium.codec-cheshire "1.0.0"
-    cambium/cambium.logback.core   "0.4.5"
-    cambium/cambium.logback.json   "0.4.5"
+    cambium/cambium.core             "1.1.1"
+    cambium/cambium.codec-cheshire   "1.0.0"
+    cambium/cambium.logback.core     "0.4.5"
+    cambium/cambium.logback.json     "0.4.5"
 
-    org.slf4j                      "1.7.35"
-    ch.qos.logback                 "1.2.10"
+    com.fasterxml.jackson.core       "2.15.2"
+    com.fasterxml.jackson.dataformat "2.15.2"
 
-    nrepl                          "0.9.0"
+    org.slf4j                        "2.0.7"
+    ch.qos.logback                   "1.4.7"
 
-    eftest                         "0.5.9"
-    tortue/spy                     "2.9.0"
+    nrepl                            "1.0.0"
 
-    nubank/matcher-combinators     "3.1.1"
+    eftest                           "0.6.0"
+    tortue/spy                       "2.14.0"
 
-    org.clojure/math.combinatorics "0.1.6"
+    nubank/matcher-combinators       "3.8.5"
 
-    io.logicblocks/cartus.core     :version}}
+    org.clojure/math.combinatorics   "0.2.0"
+
+    io.logicblocks/cartus.core       :version}}
 
   :profiles
   {:shared
