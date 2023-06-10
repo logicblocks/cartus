@@ -3,7 +3,7 @@
 
   :plugins [[lein-modules "0.3.11"]
             [lein-changelog "0.3.2"]
-            [lein-codox "0.10.7"]]
+            [lein-codox "0.10.8"]]
 
   :modules
   {:subprocess
@@ -21,15 +21,15 @@
              {"releases"  {:url "https://repo.clojars.org" :creds :gpg}
               "snapshots" {:url "https://repo.clojars.org" :creds :gpg}}
 
-    :plugins [[lein-cloverage "1.1.2"]
+    :plugins [[lein-cloverage "1.2.4"]
               [lein-shell "0.5.0"]
               [lein-cprint "1.3.3"]
-              [lein-ancient "0.6.15"]
-              [lein-eftest "0.5.9"]
-              [lein-cljfmt "0.6.7"]
+              [lein-ancient "0.7.0"]
+              [lein-eftest "0.6.0"]
+              [lein-cljfmt "0.9.2"]
               [lein-kibit "0.1.8"]
               [lein-bikeshed "0.5.2"]
-              [jonase/eastwood "0.3.11"]]
+              [jonase/eastwood "1.4.0"]]
 
     :cloverage
              {:ns-exclude-regex [#"^user"]}
