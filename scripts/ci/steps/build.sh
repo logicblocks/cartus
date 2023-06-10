@@ -9,4 +9,4 @@ PROJECT_DIR="$( cd "$SCRIPT_DIR/../../.." && pwd )"
 
 cd "$PROJECT_DIR"
 
-./go library:initialise library:check
+./go build:code:check library:initialise library:check
