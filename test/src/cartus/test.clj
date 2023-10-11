@@ -32,9 +32,13 @@
   (map->TestLogger {:events (atom [])}))
 
 (defn events
-  "Retrieves events logged to the provided `test-logger`."
-  [test-logger]
-  @(:events test-logger))
+  "Retrieves events logged to the provided `logger`."
+  [logger]
+  (let [test-logger (loop [logger logger]
+                      (if (:delegate logger)
+                        (recur (:delegate logger))
+                        logger))]
+    @(:events test-logger)))
 
 (defn create-outcome [logger modifiers log-specs]
   (let [overrides {}

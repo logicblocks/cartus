@@ -59,6 +59,42 @@
                             :ns (find-ns 'cartus.test-support.definitions))}]
             (cartus-test/events logger))))))
 
+(deftest events-gets-events-from-logger-with-transformation
+  (doseq [{:keys [level-keyword with-opts]} defs/level-defs]
+    (let [{:keys [log-fn meta]} with-opts
+          logger (cartus-core/with-transformation (cartus-test/logger) identity)
+          type ::some.event
+          context {:some "context"}
+          exception (ex-info "Something went wrong..." {:some "data"})]
+      (log-fn logger type context {:exception exception})
+
+      (is (= [{:level     level-keyword
+               :type      type
+               :context   context
+               :exception exception
+               :meta      (assoc meta
+                            :ns (find-ns 'cartus.test-support.definitions))}]
+            (cartus-test/events logger))))))
+
+(deftest events-gets-events-from-logger-with-stacked-transformations
+  (doseq [{:keys [level-keyword with-opts]} defs/level-defs]
+    (let [{:keys [log-fn meta]} with-opts
+          logger (-> (cartus-test/logger)
+                     (cartus-core/with-transformation identity)
+                     (cartus-core/with-transformation identity))
+          type ::some.event
+          context {:some "context"}
+          exception (ex-info "Something went wrong..." {:some "data"})]
+      (log-fn logger type context {:exception exception})
+
+      (is (= [{:level     level-keyword
+               :type      type
+               :context   context
+               :exception exception
+               :meta      (assoc meta
+                            :ns (find-ns 'cartus.test-support.definitions))}]
+             (cartus-test/events logger))))))
+
 (deftest was-logged?-does-not-find-missing-match
   (let [logger (cartus-test/logger)
         type ::some.event
