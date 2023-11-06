@@ -26,7 +26,7 @@ RubyLeiningen::Commands.define_custom_command('modules') do |config, opts|
 end
 
 RakeLeiningen.define_installation_tasks(
-  version: '2.9.1'
+  version: '2.10.0'
 )
 
 RakeGitCrypt.define_standard_tasks(
@@ -166,7 +166,6 @@ end
 namespace :pipeline do
   desc 'Prepare CircleCI Pipeline'
   task prepare: %i[
-    circle_ci:project:follow
     circle_ci:env_vars:ensure
     circle_ci:checkout_keys:ensure
     circle_ci:ssh_keys:ensure
