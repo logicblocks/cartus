@@ -26,7 +26,7 @@ RubyLeiningen::Commands.define_custom_command('modules') do |config, opts|
 end
 
 RakeLeiningen.define_installation_tasks(
-  version: '2.10.0'
+  version: '2.9.1'
 )
 
 RakeGitCrypt.define_standard_tasks(
