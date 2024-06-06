@@ -8,7 +8,12 @@
    [cartus.test-support.definitions :as defs]
    [cartus.test-support.logback :as logback]
 
-   [cartus.cambium :as cartus-cambium]))
+   [cartus.cambium :as cartus-cambium])
+  (:import
+   (java.time
+     Instant)
+   (java.util
+     UUID)))
 
 (defn log-lines [output-stream]
   (as-> output-stream lines
@@ -89,3 +94,27 @@
                :exception (logback/log-formatted-exception exception)
                :context   "default"}]
             (log-lines log-output-stream))))))
+
+(deftest logs-with-default-string-encoding-of-values
+  (doseq [{:keys [without-opts]} defs/level-defs]
+    (let [{:keys [log-fn]} without-opts
+          logger (cartus-cambium/logger)
+          log-output-stream (logback/configure)
+          type ::some.event
+          a-uuid-str "ae355a31-a07b-44f0-9d3f-6dc2284da37f"
+          unencodable
+          (proxy [Object] []
+            (toString []
+              (throw (Exception. "You shouldn't have called me!"))))
+          context {:a-uuid     (UUID/fromString a-uuid-str)
+                   :an-instant (Instant/ofEpochMilli 0)
+                   :unencodeable       unencodable}]
+      (cartus-cambium/initialise)
+
+      (log-fn logger type context)
+
+      (is (= [{:a-uuid     "ae355a31-a07b-44f0-9d3f-6dc2284da37f"
+               :an-instant "1970-01-01T00:00:00Z"
+               :unencodeable "Unable to encode MDC value as JSON"}]
+            (->> (log-lines log-output-stream)
+              (map #(select-keys % (keys context)))))))))
