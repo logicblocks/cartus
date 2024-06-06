@@ -80,8 +80,8 @@
   (doseq [{:keys [level-keyword with-opts]} defs/level-defs]
     (let [{:keys [log-fn meta]} with-opts
           logger (-> (cartus-test/logger)
-                     (cartus-core/with-transformation identity)
-                     (cartus-core/with-transformation identity))
+                   (cartus-core/with-transformation identity)
+                   (cartus-core/with-transformation identity))
           type ::some.event
           context {:some "context"}
           exception (ex-info "Something went wrong..." {:some "data"})]
@@ -93,7 +93,7 @@
                :exception exception
                :meta      (assoc meta
                             :ns (find-ns 'cartus.test-support.definitions))}]
-             (cartus-test/events logger))))))
+            (cartus-test/events logger))))))
 
 (deftest was-logged?-does-not-find-missing-match
   (let [logger (cartus-test/logger)
