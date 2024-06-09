@@ -1,0 +1,14 @@
+[
+  {
+    "name": "org.slf4j.ILoggerFactory",
+    "queryAllPublicMethods": true
+  },
+  {
+    "name": "org.slf4j.Logger",
+    "queryAllPublicMethods": true
+  },
+  {
+    "name": "org.slf4j.LoggerFactory",
+    "queryAllPublicMethods": true
+  }
+]
