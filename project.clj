@@ -57,8 +57,8 @@
     cambium/cambium.logback.core     "0.4.6"
     cambium/cambium.logback.json     "0.4.6"
 
-    com.fasterxml.jackson.core       "2.15.2"
-    com.fasterxml.jackson.dataformat "2.15.2"
+    com.fasterxml.jackson.core       "2.17.1"
+    com.fasterxml.jackson.dataformat "2.17.1"
 
     org.slf4j                        "2.0.13"
     ch.qos.logback                   "1.5.6"
