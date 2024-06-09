@@ -1,0 +1,12 @@
+[
+  {
+    "name": "cambium.logback.json.FlatJsonLayout",
+    "queryAllPublicMethods": true,
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  }
+]

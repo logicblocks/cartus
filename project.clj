@@ -48,29 +48,29 @@
      [~(str (System/getProperty "user.dir") "/config/linter.clj")]}}
 
    :versions
-   {org.clojure/clojure              "1.11.1"
-    org.clojure/tools.trace          "0.7.11"
+   {org.clojure/clojure              "1.11.3"
+    org.clojure/tools.trace          "0.8.0"
     org.clojure/tools.logging        "1.2.4"
 
     cambium/cambium.core             "1.1.1"
     cambium/cambium.codec-cheshire   "1.0.0"
-    cambium/cambium.logback.core     "0.4.5"
-    cambium/cambium.logback.json     "0.4.5"
+    cambium/cambium.logback.core     "0.4.6"
+    cambium/cambium.logback.json     "0.4.6"
 
     com.fasterxml.jackson.core       "2.15.2"
     com.fasterxml.jackson.dataformat "2.15.2"
 
-    org.slf4j                        "2.0.7"
-    ch.qos.logback                   "1.4.7"
+    org.slf4j                        "2.0.13"
+    ch.qos.logback                   "1.5.6"
 
-    nrepl                            "1.0.0"
+    nrepl                            "1.1.2"
 
     eftest                           "0.6.0"
-    tortue/spy                       "2.14.0"
+    tortue/spy                       "2.15.0"
 
-    nubank/matcher-combinators       "3.8.5"
+    nubank/matcher-combinators       "3.9.1"
 
-    org.clojure/math.combinatorics   "0.2.0"
+    org.clojure/math.combinatorics   "0.3.0"
 
     io.logicblocks/cartus.core       :version}}
 
