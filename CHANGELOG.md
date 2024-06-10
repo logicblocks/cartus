@@ -8,6 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Added cartus.cambium.json namespace with function for adding
+   java.time.* encoders.
+
 ## [0.1.18] — 2023-06-10
 
 ### Changes
