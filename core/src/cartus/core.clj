@@ -75,6 +75,19 @@
       (fn [event]
         (assoc event :context (merge context (:context event)))))))
 
+(defrecord CompositeLogger
+  [loggers]
+  Logger
+  (log [_ level type context opts]
+    (doseq [logger loggers]
+      (log logger level type context opts))))
+
+(defn compose-loggers
+  "Returns a new logger which logs to each of the provided loggers"
+  [logger-a logger-b & other-loggers]
+  (let [loggers (concat [logger-a logger-b] other-loggers)]
+    (map->CompositeLogger {:loggers loggers})))
+
 (def ^:private all-levels
   [:trace :debug :info :warn :error :fatal])
 

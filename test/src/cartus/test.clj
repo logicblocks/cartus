@@ -1,16 +1,16 @@
 (ns cartus.test
   "A [[cartus.core/Logger]] implementation and utilities for use in tests."
   (:require
-    [clojure.test :as test]
-    [clojure.set :as sets]
+   [clojure.test :as test]
+   [clojure.set :as sets]
 
-    [matcher-combinators.core :as mc-core]
-    [matcher-combinators.matchers :as mc-matchers]
-    [matcher-combinators.clj-test :as mc-test]
+   [matcher-combinators.core :as mc-core]
+   [matcher-combinators.matchers :as mc-matchers]
+   [matcher-combinators.clj-test :as mc-test]
 
-    [cartus.core :as cartus]
-    [cartus.test.matchers :as cartus-matchers])
-  (:import (cartus.core TransformerLogger)))
+   [cartus.core :as cartus]
+   [cartus.test.matchers :as cartus-matchers])
+  (:import (cartus.core CompositeLogger TransformerLogger)))
 
 (defprotocol TestEventStorage
   (-get-events [logger])
@@ -37,6 +37,20 @@
     (-get-events (:delegate tx-logger)))
   (-clear-events! [tx-logger]
     (-clear-events! (:delegate tx-logger))))
+
+(extend-type CompositeLogger
+  TestEventStorage
+  (-get-events [composite-logger]
+    (->> composite-logger
+      :loggers
+      (filter #(satisfies? TestEventStorage %))
+      (mapcat -get-events)))
+  (-clear-events! [composite-logger]
+    (->> composite-logger
+      :loggers
+      (filter #(satisfies? TestEventStorage %))
+      (map -clear-events!)
+      doall)))
 
 (defn logger
   "Constructs a test logger storing all logged events in an atom.

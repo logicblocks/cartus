@@ -57,7 +57,7 @@
           logger (spying-logger)
           type ::some.event
           context {:some "context"}
-          opts {:message "Something happened"
+          opts {:message   "Something happened"
                 :exception (ex-info "Oops" {:data []})}
           meta (assoc meta
                  :ns (find-ns 'cartus.test-support.definitions))]
@@ -404,3 +404,24 @@
                               :line   5
                               :column 5}}}]
           (map first (spy/calls (:spy logger)))))))
+
+(deftest compose-loggers-test
+  (let [logger-a (spying-logger)
+        logger-b (spying-logger)
+        logger-c (spying-logger)
+        composite-logger (cartus/compose-loggers logger-a logger-b logger-c)
+        event-type ::event-1
+        context {:some-context "an-event"}]
+    ^{:line 1 :column 1} (cartus/info composite-logger event-type context)
+    (let [expected-log {:level   :info
+                        :type    event-type
+                        :context context
+                        :opts    {:meta {:ns     (find-ns 'cartus.core-test)
+                                         :line   1
+                                         :column 1}}}]
+      (is (= [expected-log]
+            (map first (spy/calls (:spy logger-a)))))
+      (is (= [expected-log]
+            (map first (spy/calls (:spy logger-b)))))
+      (is (= [expected-log]
+            (map first (spy/calls (:spy logger-c))))))))
