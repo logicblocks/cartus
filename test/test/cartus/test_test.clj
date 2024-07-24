@@ -765,3 +765,13 @@
                          :ns     (find-ns 'cartus.test-test)}
                :type    type-2})]
           (:matcher-combinators.result/value failing-match-result)))))
+
+(deftest clear-events!-test
+  (let [logger (cartus-test/logger)]
+    (cartus-core/info logger ::some-event {})
+    (cartus-core/debug logger ::some-other-event {})
+    (is (= 2
+          (-> logger cartus.test/events count)))
+    (cartus-test/clear-events! logger)
+    (is (= 0
+          (-> logger cartus.test/events count)))))

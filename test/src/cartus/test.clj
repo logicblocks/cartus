@@ -31,6 +31,13 @@
   []
   (map->TestLogger {:events (atom [])}))
 
+(defn clear-events!
+  "Clears events logged to the provided `logger`."
+  [logger]
+  (-> logger
+    :events
+    (reset! [])))
+
 (defn events
   "Retrieves events logged to the provided `logger`."
   [logger]
