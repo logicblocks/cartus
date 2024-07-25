@@ -12,7 +12,11 @@
    [cartus.test.matchers :as cartus-matchers])
   (:import (cartus.core CompositeLogger TransformerLogger)))
 
-(defrecord TestLogger
+(defprotocol TestEventStorage
+  (-get-events [logger])
+  (-clear-events! [logger]))
+
+(deftype TestLogger
   [events]
   cartus/Logger
   (log [_ level type context opts]
@@ -20,19 +24,15 @@
       (merge opts
         {:level   level
          :type    type
-         :context context}))))
+         :context context})))
 
-(defprotocol TestEventStorage
-  (-get-events [logger])
-  (-clear-events! [logger]))
+  TestEventStorage
+  (-get-events [_]
+    @events)
+  (-clear-events! [_]
+    (reset! events [])))
 
 (extend-protocol TestEventStorage
-  TestLogger
-  (-get-events [test-logger]
-    @(:events test-logger))
-  (-clear-events! [test-logger]
-    (reset! (:events test-logger) []))
-
   TransformerLogger
   (-get-events [tx-logger]
     (-get-events (:delegate tx-logger)))
@@ -60,7 +60,7 @@
 
   Events can be retrieved using [[events]]."
   []
-  (map->TestLogger {:events (atom [])}))
+  (TestLogger. (atom [])))
 
 (defn clear-events!
   "Clears events logged to the provided `logger`."
