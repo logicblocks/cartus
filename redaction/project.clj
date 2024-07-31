@@ -1,4 +1,4 @@
-(defproject io.logicblocks/cartus.redaction "0.1.19-RC19"
+(defproject io.logicblocks/cartus.redaction "0.1.19-RC20"
   :description "A redaction transformer for cartus."
 
   :plugins  [[lein-modules "0.3.11"]]
