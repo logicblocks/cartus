@@ -120,7 +120,7 @@ GEM
       sshkey (~> 2.0)
     rchardet (1.8.0)
     regexp_parser (2.10.0)
-    rubocop (1.71.1)
+    rubocop (1.71.2)
       json (~> 2.3)
       language_server-protocol (>= 3.17.0)
       parallel (~> 1.10)
